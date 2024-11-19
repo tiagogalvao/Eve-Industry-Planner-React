@@ -9,6 +9,7 @@ import { ApplicationSettingsContext } from "../../Context/LayoutContext";
 import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
 import updateJobInFirebase from "../../Functions/Firebase/updateJob";
 import findOrGetJobObject from "../../Functions/Helper/findJobObject";
+import checkJobTypeIsBuildable from "../../Functions/Helper/checkJobTypeIsBuildable";
 
 export function useBuildChildJobs() {
   const { jobArray, groupArray, updateJobArray, updateGroupArray } =
@@ -79,10 +80,7 @@ export function useBuildChildJobs() {
         if (applicationSettings.checkTypeIDisExempt(material.typeID)) {
           return output;
         }
-        if (
-          material.jobType === jobTypes.manufacturing ||
-          material.jobType === jobTypes.reaction
-        ) {
+        if (checkJobTypeIsBuildable(material.jobType)) {
           output.push({
             itemID: material.typeID,
             name: material.name,
@@ -116,10 +114,7 @@ export function useBuildChildJobs() {
       }
 
       requestedJob.build.materials.forEach((material) => {
-        if (
-          material.jobType !== jobTypes.manufacturing &&
-          material.jobType !== jobTypes.reaction
-        ) {
+        if (!checkJobTypeIsBuildable(material.jobType)) {
           return;
         }
         if (applicationSettings.checkTypeIDisExempt(material.typeID)) {

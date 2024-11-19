@@ -40,12 +40,14 @@ import { useHelperFunction } from "../../../../Hooks/GeneralHooks/useHelperFunct
 import buildFullJobTree from "../../Functions/buildFullJobTree";
 import { useJobBuild } from "../../../../Hooks/useJobBuild";
 import { useRecalcuateJob } from "../../../../Hooks/GeneralHooks/useRecalculateJob";
+import { useDeleteMultipleJobs } from "../../../../Hooks/JobHooks/useDeleteMultipleJobs";
 
 export function useGroupPageSideMenuFunctions(
   groupJobs,
   updateExpandRightContentMenu,
   rightContentMenuContentID,
-  updateRightContentMenuContentID
+  updateRightContentMenuContentID,
+  setSkeletonElementsToDisplay
 ) {
   const { activeGroup } = useContext(ActiveJobContext);
   const { jobArray, groupArray, updateJobArray, updateGroupArray } =
@@ -73,6 +75,7 @@ export function useGroupPageSideMenuFunctions(
   const { sendSnackbarNotificationSuccess, sendSnackbarNotificationError } =
     useHelperFunction();
   const { recalculateJobForNewTotal } = useRecalcuateJob();
+  const { deleteMultipleJobs } = useDeleteMultipleJobs();
   const navigate = useNavigate();
   const activeGroupObject = groupArray.find((i) => i.groupID === activeGroup);
 
@@ -144,13 +147,37 @@ export function useGroupPageSideMenuFunctions(
         icon: <AccountTreeIcon />,
         tooltip:
           "Adds the next ingrediants of all of the jobs or just the selected jobs.",
-        onClick: () => {
-          // if (multiSelectJobPlanner.length > 0) {
-          //   massBuildMaterials(multiSelectJobPlanner);
-          //   updateMultiSelectJobPlanner([]);
-          // } else {
-          //   throwDialogError(standardDialogError);
-          // }
+        onClick: async () => {
+          const retrievedJobs = [];
+          const jobList =
+            multiSelectJobPlanner.length > 0
+              ? multiSelectJobPlanner
+              : [...activeGroupObject.includedJobIDs];
+
+          const newJobs = await buildFullJobTree(
+            jobList,
+            jobArray,
+            retrievedJobs,
+            activeGroup,
+            groupArray,
+            applicationSettings,
+            buildJob,
+            recalculateJobForNewTotal,
+            setSkeletonElementsToDisplay,
+            false
+          );
+
+          activeGroupObject.addJobsToGroup(newJobs);
+
+          updateJobArray((prev) => {
+            const existingIDs = new Set(prev.map(({ jobID }) => jobID));
+            return [
+              ...prev,
+              ...retrievedJobs.filter(({ jobID }) => !existingIDs.has(jobID)),
+              ...newJobs,
+            ];
+          });
+          sendSnackbarNotificationSuccess(`${newJobs.length} Jobs Added`);
         },
       },
       {
@@ -164,7 +191,7 @@ export function useGroupPageSideMenuFunctions(
               ? multiSelectJobPlanner
               : [...activeGroupObject.includedJobIDs];
 
-          const g = await buildFullJobTree(
+          const newJobs = await buildFullJobTree(
             jobList,
             jobArray,
             retrievedJobs,
@@ -172,8 +199,22 @@ export function useGroupPageSideMenuFunctions(
             groupArray,
             applicationSettings,
             buildJob,
-            recalculateJobForNewTotal
+            recalculateJobForNewTotal,
+            setSkeletonElementsToDisplay,
+            true
           );
+
+          activeGroupObject.addJobsToGroup(newJobs);
+
+          updateJobArray((prev) => {
+            const existingIDs = new Set(prev.map(({ jobID }) => jobID));
+            return [
+              ...prev,
+              ...retrievedJobs.filter(({ jobID }) => !existingIDs.has(jobID)),
+              ...newJobs,
+            ];
+          });
+          sendSnackbarNotificationSuccess(`${newJobs.length} Jobs Added`);
         },
       },
       {

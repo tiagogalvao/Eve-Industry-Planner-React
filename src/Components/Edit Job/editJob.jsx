@@ -41,10 +41,10 @@ import {
   SystemIndexContext,
 } from "../../Context/EveDataContext";
 import { IsLoggedInContext } from "../../Context/AuthContext";
-import { useSystemIndexFunctions } from "../../Hooks/GeneralHooks/useSystemIndexFunctions";
 import { useFirebase } from "../../Hooks/useFirebase";
 import { useInstallCostsCalc } from "../../Hooks/GeneralHooks/useInstallCostCalc";
 import useSetupUnmountEventListeners from "../../Hooks/GeneralHooks/useSetupUnmountEventListeners";
+import getMissingESIData from "../../Functions/Shared/getMissingESIData";
 
 export default function EditJob_New({ colorMode }) {
   const { jobArray } = useContext(JobArrayContext);
@@ -52,8 +52,9 @@ export default function EditJob_New({ colorMode }) {
   const { updateActiveJob: updateActiveJobID } = useContext(ActiveJobContext);
   const { IsLoggedIn } = useContext(IsLoggedInContext);
   const { updateArchivedJobs } = useContext(ArchivedJobsContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
-  const { updateSystemIndexData } = useContext(SystemIndexContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const [activeJob, updateActiveJob] = useState(null);
   const [jobModified, setJobModified] = useState(false);
   const [temporaryChildJobs, updateTemporaryChildJobs] = useState({});
@@ -80,8 +81,7 @@ export default function EditJob_New({ colorMode }) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [jobArrayUpdated, setJobArrayUpdated] = useState(false);
-  const { findMissingSystemIndex } = useSystemIndexFunctions();
-  const { getArchivedJobData, getItemPrices } = useFirebase();
+  const { getArchivedJobData } = useFirebase();
   const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const navigate = useNavigate();
   const { jobID } = useParams();
@@ -96,48 +96,41 @@ export default function EditJob_New({ colorMode }) {
     async function setInitialState() {
       if (!jobArrayUpdated || jobID === activeJob?.jobID) return;
 
-      // Find the job in the job array
       const matchedJob = jobArray.find((i) => i.jobID === jobID);
 
-      // If the job is not found, navigate away
       if (!matchedJob) {
         console.error("Unable to find job document");
         navigate("/jobplanner");
         return;
       }
       try {
-        const priceIDsToRequest = new Set();
-        const systemIndexToRequest = new Set();
         const linkedJobs = jobArray.filter(
           (i) =>
             i.jobID === jobID || matchedJob.getRelatedJobs().includes(i.jobID)
         );
-        linkedJobs.forEach((job) => {
-          job.getMaterialIDs().forEach((i) => priceIDsToRequest.add(i));
-          job.getSystemIndexes().forEach((i) => systemIndexToRequest.add(i));
-        });
-        const systemIndexResults = await findMissingSystemIndex([
-          ...systemIndexToRequest,
-        ]);
         if (IsLoggedIn) {
           const newArchivedJobsArray = await getArchivedJobData(jobID);
           updateArchivedJobs(newArchivedJobsArray);
         }
+        const { requestedMarketData, requestedSystemIndexes } =
+          await getMissingESIData(linkedJobs, evePrices, systemIndexData);
 
         for (let setup of Object.values(matchedJob.build.setup)) {
           setup.estimatedInstallCost = calculateInstallCostFromJob(
             setup,
             undefined,
-            systemIndexResults
+            requestedSystemIndexes
           );
         }
-        const itemPriceResults = await getItemPrices([...priceIDsToRequest]);
 
         updateEvePrices((prev) => ({
           ...prev,
-          ...itemPriceResults,
+          ...requestedMarketData,
         }));
-        updateSystemIndexData((prev) => ({ ...prev, ...systemIndexResults }));
+        updateSystemIndexData((prev) => ({
+          ...prev,
+          ...requestedSystemIndexes,
+        }));
         backupJob.current = new Job(matchedJob);
         updateActiveJob(matchedJob);
         updateActiveJobID(matchedJob.jobID);

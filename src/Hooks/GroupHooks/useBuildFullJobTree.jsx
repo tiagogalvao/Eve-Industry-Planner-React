@@ -7,6 +7,7 @@ import { IsLoggedInContext } from "../../Context/AuthContext";
 import { useHelperFunction } from "../GeneralHooks/useHelperFunctions";
 import { ApplicationSettingsContext } from "../../Context/LayoutContext";
 import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
+import checkJobTypeIsBuildable from "../../Functions/Helper/checkJobTypeIsBuildable";
 
 export function useBuildFullJobTree() {
   const { jobArray, groupArray, updateJobArray, updateGroupArray } =
@@ -91,8 +92,7 @@ export function useBuildFullJobTree() {
           return output;
         }
         if (
-          material.jobType === jobTypes.manufacturing ||
-          material.jobType === jobTypes.reaction
+          checkJobTypeIsBuildable(material.jobType)
         ) {
           output.push({
             itemID: material.typeID,
@@ -124,8 +124,7 @@ export function useBuildFullJobTree() {
     for (const requestedJob of jobHolding) {
       requestedJob.build.materials.forEach((material) => {
         if (
-          material.jobType !== jobTypes.manufacturing &&
-          material.jobType !== jobTypes.reaction
+          !checkJobTypeIsBuildable(material.jobType)
         ) {
           return;
         }

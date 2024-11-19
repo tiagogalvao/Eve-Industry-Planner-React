@@ -4,62 +4,55 @@ function materialTreeShaker(allJobObjects, recalculateJob) {
     return;
   }
 
-  let changesMade;
+  let jobsRecalculated;
   const maxIterations = 100;
   let iterationCounter = 0;
 
   do {
-    changesMade = false;
-    const iterationData = [];
+    jobsRecalculated = false;
 
     allJobObjects.forEach((job) => {
-      let parentJobRequirements = 0;
-      let itemRecalculated = false;
-      job.parentJob.forEach((parentJobID) => {
-        const parentJob = allJobObjects.find(
-          ({ jobID }) => jobID === parentJobID
-        );
-        if ({ ...parentJob }) {
-          const material = parentJob.build.materials.find(
-            ({ typeID }) => typeID === job.itemID
-          );
-          if (material) {
-            parentJobRequirements += material.quantity || 0;
-          }
-        }
-      });
+      let parentJobRequirements = getParentJobRequirements(job, allJobObjects);
+      let needsRecalculation = shouldRecalculate(job, parentJobRequirements);
 
-      const currentJobProduction = job.build.products.totalQuantity;
-      const requirementDistance = job.itemsProducedPerRun;
-
-      const minRequired = currentJobProduction - requirementDistance;
-      const maxRequired = currentJobProduction + requirementDistance;
-
-      if (
-        parentJobRequirements < minRequired ||
-        parentJobRequirements > maxRequired
-      ) {
+      if (needsRecalculation) {
         recalculateJob(job, parentJobRequirements);
-        itemRecalculated = true;
-        changesMade = true;
+        jobsRecalculated = true;
       }
-      iterationData.push({
-        jobName: job.name,
-        parentJobRequirements,
-        currentJobProduction,
-        minRequired,
-        maxRequired,
-        itemRecalculated,
-      });
     });
     iterationCounter++;
     if (iterationCounter > maxIterations) {
       break;
     }
-
-    console.log("Iteration: ", iterationCounter);
-    console.table(iterationData);
-  } while (changesMade);
+  } while (jobsRecalculated);
 }
+
+function getParentJobRequirements(job, allJobs) {
+  return job.parentJob.reduce((total, parentJobID) => {
+    const parentJob = allJobs.find(({ jobID }) => jobID === parentJobID);
+    if (parentJob) {
+      const material = parentJob.build.materials.find(
+        ({ typeID }) => typeID === job.itemID
+      );
+      if (material) {
+        return total + (material.quantity || 0);
+      }
+    }
+    return total;
+  }, 0);
+}
+
+const shouldRecalculate = (job, parentJobRequirements) => {
+  const neededRuns = Math.ceil(parentJobRequirements / job.itemsProducedPerRun);
+  const minBuildQuantity = neededRuns * job.itemsProducedPerRun;
+  const { totalQuantity: currentProduction } = job.build.products;
+
+  const isOverproducing =
+    currentProduction > minBuildQuantity + job.itemsProducedPerRun;
+  const isUnderproducing = currentProduction < minBuildQuantity;
+  const isItemAParent = job.parentJob.length > 0;
+
+  return isUnderproducing || (isOverproducing && !isItemAParent);
+};
 
 export default materialTreeShaker;

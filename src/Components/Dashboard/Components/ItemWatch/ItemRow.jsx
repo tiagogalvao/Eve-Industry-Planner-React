@@ -11,7 +11,10 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useContext, useState } from "react";
-import { EvePricesContext } from "../../../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../../../Context/EveDataContext";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ClearIcon from "@mui/icons-material/Clear";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -26,7 +29,6 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useJobBuild } from "../../../../Hooks/useJobBuild";
-import { useJobManagement } from "../../../../Hooks/useJobManagement";
 import { JobArrayContext } from "../../../../Context/JobContext";
 import { trace } from "firebase/performance";
 import { performance } from "../../../../firebase";
@@ -36,6 +38,7 @@ import { ApplicationSettingsContext } from "../../../../Context/LayoutContext";
 import JobSnapshot from "../../../../Classes/jobSnapshotConstructor";
 import addNewJobToFirebase from "../../../../Functions/Firebase/addNewJob";
 import uploadJobSnapshotsToFirebase from "../../../../Functions/Firebase/uploadJobSnapshots";
+import getMissingESIData from "../../../../Functions/Shared/getMissingESIData";
 
 export function WatchListRow({
   item,
@@ -52,10 +55,11 @@ export function WatchListRow({
     UserJobSnapshotContext
   );
   const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
-  const { getItemPrices, uploadUserWatchlist } = useFirebase();
+  const { uploadUserWatchlist } = useFirebase();
   const { checkAllowBuild, buildJob } = useJobBuild();
-  const { generatePriceRequestFromJob } = useJobManagement();
   const {
     findItemPriceObject,
     sendSnackbarNotificationSuccess,
@@ -87,11 +91,6 @@ export function WatchListRow({
 
     if (!newJob) return;
 
-    const itemPricePromise = getItemPrices(
-      generatePriceRequestFromJob(newJob),
-      parentUser
-    );
-
     const jobSnapshot = new JobSnapshot(newJob);
 
     newSnapshotArray.push(jobSnapshot);
@@ -105,11 +104,16 @@ export function WatchListRow({
       itemID: newJob.itemID,
     });
 
-    const itemPriceResult = await itemPricePromise;
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData(newJob, evePrices, systemIndexData);
 
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
+    }));
+    updateSystemIndexData((prev) => ({
+      ...prev,
+      ...requestedSystemIndexes,
     }));
 
     updateUserJobSnapshot(newSnapshotArray);

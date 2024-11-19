@@ -13,7 +13,6 @@ import { Footer } from "../Footer/Footer";
 import CollapseableContentDrawer_Right from "../SideMenu/rightContentDrawer";
 import RightSideMenuContent_GroupPage from "./Side Menu/rightSideMenuContent";
 import GroupAccordionFrame from "./Accordion/AccordionFrame";
-import { useFirebase } from "../../Hooks/useFirebase";
 import { EvePricesContext } from "../../Context/EveDataContext";
 import {
   FirebaseListenersContext,
@@ -23,13 +22,14 @@ import manageListenerRequests from "../../Functions/Firebase/manageListenerReque
 import GroupNameFrame from "./Group Name/groupNameFrame";
 import { MultiSelectJobPlannerContext } from "../../Context/LayoutContext";
 import { useGroupPageSideMenuFunctions } from "./Side Menu/Buttons/buttonFunctions";
-import findOrGetJobObject from "../../Functions/Helper/findJobObject";
 import getMissingJobObjects from "../../Functions/Helper/getMissingJobObjects";
+import { PriceEntryDialog } from "../Dialogues/Price Entry/PriceEntryList";
+import getMarketData from "../../Functions/MarketData/findMarketData";
 
 function GroupPageFrame({ colorMode }) {
   const { activeGroup, updateActiveGroup } = useContext(ActiveJobContext);
   const { jobArray, updateJobArray, groupArray } = useContext(JobArrayContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
   const { firebaseListeners, updateFirebaseListeners } = useContext(
     FirebaseListenersContext
   );
@@ -43,7 +43,6 @@ function GroupPageFrame({ colorMode }) {
     useState(null);
   const [skeletonElementsToDisplay, setSkeletonElementsToDisplay] = useState(0);
   const [highlightedItems, updateHighlightedItem] = useState(new Set());
-  const { getItemPrices } = useFirebase();
   const { groupID } = useParams();
 
   const navigate = useNavigate();
@@ -66,9 +65,10 @@ function GroupPageFrame({ colorMode }) {
           throw new Error("Unable to find requested group");
         }
 
-        const itemPriceRequest = getItemPrices([
-          ...activeGroupObject.materialIDs,
-        ]);
+        const itemPriceRequest = getMarketData(
+          activeGroupObject.materialIDs,
+          evePrices
+        );
 
         const retrievedJobs = await getMissingJobObjects(
           activeGroupObject.includedJobIDs,
@@ -111,7 +111,8 @@ function GroupPageFrame({ colorMode }) {
     groupJobs,
     updateExpandRightContentMenu,
     rightContentMenuContentID,
-    updateRightContentMenuContentID
+    updateRightContentMenuContentID,
+    setSkeletonElementsToDisplay
   );
 
   if (!activeGroup) return <LoadingPage />;
@@ -121,6 +122,7 @@ function GroupPageFrame({ colorMode }) {
       <Header colorMode={colorMode} />
 
       <ShoppingListDialog />
+      <PriceEntryDialog />
       <LeftCollapseableMenuDrawer inputDrawerButtons={buttonOptions} />
       <Box
         component="main"

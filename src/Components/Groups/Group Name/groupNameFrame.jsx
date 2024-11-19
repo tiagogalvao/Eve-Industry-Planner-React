@@ -1,5 +1,12 @@
 import { useContext, useEffect, useState } from "react";
-import { Grid, IconButton, Paper, TextField, Typography } from "@mui/material";
+import {
+  Grid,
+  IconButton,
+  Paper,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { ActiveJobContext, JobArrayContext } from "../../../Context/JobContext";
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
@@ -48,12 +55,14 @@ function GroupNameFrame({}) {
             </Typography>
           </Grid>
           <Grid item xs={1} align="center">
-            <IconButton
-              size="small"
-              onClick={() => updateAllowEditGroupName((prev) => !prev)}
-            >
-              <EditIcon color="primary" />
-            </IconButton>
+            <Tooltip title="Edit Group Name" arrow placement="bottom">
+              <IconButton
+                size="small"
+                onClick={() => updateAllowEditGroupName((prev) => !prev)}
+              >
+                <EditIcon color="primary" />
+              </IconButton>
+            </Tooltip>
           </Grid>
         </Grid>
       ) : (
@@ -67,32 +76,36 @@ function GroupNameFrame({}) {
             />
           </Grid>
           <Grid item xs={2} align="right">
-            <IconButton
-              size="small"
-              sx={{
-                "&:hover": {
-                  "& .MuiSvgIcon-root": {
-                    color: "success.main",
+            <Tooltip title="Save Changes" arrow placement="bottom">
+              <IconButton
+                size="small"
+                sx={{
+                  "&:hover": {
+                    "& .MuiSvgIcon-root": {
+                      color: "success.main",
+                    },
                   },
-                },
-              }}
-              onClick={handleSave}
-            >
-              <SaveIcon color="primary" />
-            </IconButton>
-            <IconButton
-              size="small"
-              sx={{
-                "&:hover": {
-                  "& .MuiSvgIcon-root": {
-                    color: "error.main",
+                }}
+                onClick={handleSave}
+              >
+                <SaveIcon color="primary" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Revert Changes" arrow placement="bottom">
+              <IconButton
+                size="small"
+                sx={{
+                  "&:hover": {
+                    "& .MuiSvgIcon-root": {
+                      color: "error.main",
+                    },
                   },
-                },
-              }}
-              onClick={handleClose}
-            >
-              <CloseIcon color="primary" />
-            </IconButton>
+                }}
+                onClick={handleClose}
+              >
+                <CloseIcon color="primary" />
+              </IconButton>
+            </Tooltip>
           </Grid>
         </Grid>
       )}

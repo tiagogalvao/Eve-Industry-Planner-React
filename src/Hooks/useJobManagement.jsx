@@ -13,7 +13,6 @@ import {
   LinkedIDsContext,
 } from "../Context/JobContext";
 import { IsLoggedInContext } from "../Context/AuthContext";
-import { useFirebase } from "./useFirebase";
 import { trace } from "@firebase/performance";
 import { performance } from "../firebase";
 import { getAnalytics, logEvent } from "firebase/analytics";
@@ -21,6 +20,7 @@ import {
   CorpEsiDataContext,
   EvePricesContext,
   PersonalESIDataContext,
+  SystemIndexContext,
 } from "../Context/EveDataContext";
 import { useJobBuild } from "./useJobBuild";
 import { STATIONID_RANGE } from "../Context/defaultValues";
@@ -35,12 +35,17 @@ import findOrGetJobObject from "../Functions/Helper/findJobObject";
 import manageListenerRequests from "../Functions/Firebase/manageListenerRequests";
 import seperateGroupAndJobIDs from "../Functions/Helper/seperateGroupAndJobIDs";
 import retrieveJobIDsFromGroupObjects from "../Functions/Helper/getJobIDsFromGroupObjects";
+import convertJobIDsToObjects from "../Functions/Helper/convertJobIDsToObjects";
+import getMissingESIData from "../Functions/Shared/getMissingESIData";
+import checkJobTypeIsBuildable from "../Functions/Helper/checkJobTypeIsBuildable";
 
 export function useJobManagement() {
   const { jobArray, groupArray, updateJobArray } = useContext(JobArrayContext);
   const { apiJobs, updateApiJobs } = useContext(ApiJobsContext);
   const { isLoggedIn } = useContext(IsLoggedInContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { updateMassBuildDisplay } = useContext(MassBuildDisplayContext);
   const { userJobSnapshot, updateUserJobSnapshot } = useContext(
     UserJobSnapshotContext
@@ -61,9 +66,8 @@ export function useJobManagement() {
   const { firebaseListeners, updateFirebaseListeners } = useContext(
     FirebaseListenersContext
   );
-  const { getItemPrices } = useFirebase();
   const { buildJob } = useJobBuild();
-  const { findParentUser, isItemBuildable, sendSnackbarNotificationSuccess } =
+  const { findParentUser, sendSnackbarNotificationSuccess } =
     useHelperFunction();
 
   const analytics = getAnalytics();
@@ -74,7 +78,6 @@ export function useJobManagement() {
     r.start();
     let finalBuildCount = [];
     let childJobs = [];
-    let materialPriceIDs = new Set();
     let newUserJobSnapshot = [...userJobSnapshot];
     const retrievedJobs = [];
     let jobsToSave = new Set();
@@ -90,14 +93,10 @@ export function useJobManagement() {
       );
 
       inputJob.build.materials.forEach((material) => {
-        materialPriceIDs = new Set(
-          materialPriceIDs,
-          generatePriceRequestFromJob(inputJob)
-        );
         if (inputJob.build.childJobs[material.typeID].length > 0) {
           return;
         }
-        if (!isItemBuildable(material.jobType)) {
+        if (!checkJobTypeIsBuildable(material.jobType)) {
           return;
         }
         if (applicationSettings.checkTypeIDisExempt(material.typeID)) {
@@ -141,10 +140,6 @@ export function useJobManagement() {
     let newJobs = await buildJob(finalBuildCount);
 
     for (let newJob of newJobs) {
-      materialPriceIDs = new Set(
-        materialPriceIDs,
-        generatePriceRequestFromJob(newJob)
-      );
       childJobs.push(newJob);
       logEvent(analytics, "New Job", {
         loggedIn: isLoggedIn,
@@ -163,7 +158,7 @@ export function useJobManagement() {
         (i) => i.jobID === inputJobID
       );
       for (let material of updatedJob.build.materials) {
-        if (!isItemBuildable(material.jobType)) {
+        if (!checkJobTypeIsBuildable(material.jobType)) {
           continue;
         }
         let match = childJobs.find((i) => i.itemID === material.typeID);
@@ -220,18 +215,14 @@ export function useJobManagement() {
       firebaseListeners,
       isLoggedIn
     );
-    updateMassBuildDisplay((prev) => ({
-      ...prev,
-      totalPrice: [...materialPriceIDs].length,
-    }));
-    const itemPriceResult = await getItemPrices(
-      [...materialPriceIDs],
-      parentUser
-    );
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData(newJobs, evePrices, systemIndexData);
+
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
     }));
+    updateSystemIndexData((prev) => ({ ...prev, ...requestedSystemIndexes }));
     updateJobArray((prev) => {
       const existingIDs = new Set(prev.map(({ jobID }) => jobID));
       return [
@@ -637,11 +628,6 @@ export function useJobManagement() {
     }
   }
 
-  function generatePriceRequestFromJob({ itemID, build }) {
-    const materialTypeIDs = build.materials.map((mat) => mat.typeID);
-    return [...new Set([itemID, ...materialTypeIDs])];
-  }
-
   function findBlueprintType(blueprintID) {
     if (!blueprintID) {
       return "bpc";
@@ -733,7 +719,6 @@ export function useJobManagement() {
     deepCopyJobObject,
     findAllChildJobCountOrIDs,
     findBlueprintType,
-    generatePriceRequestFromJob,
     massBuildMaterials,
     mergeJobsNew,
     timeRemainingCalc,

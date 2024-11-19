@@ -36,8 +36,9 @@ class Group {
     this.setMaterialIDs = this.setMaterialIDs.bind(this);
     this.removeMaterialIDs = this.removeMaterialIDs.bind(this);
     this.updateOutputJobCount = this.updateOutputJobCount.bind(this);
-    this.addAreComplete = this.addAreComplete.bind(this);
+    this.addOutputJobCount = this.addOutputJobCount.bind(this);
     this.setAreComplete = this.setAreComplete.bind(this);
+    this.addAreComplete = this.addAreComplete.bind(this);
     this.removeAreComplete = this.removeAreComplete.bind(this);
     this.toggleShowComplete = this.toggleShowComplete.bind(this);
     this.updateGroupStatus = this.updateGroupStatus.bind(this);
@@ -236,6 +237,11 @@ class Group {
     this.outputJobCount = Number(input);
   }
 
+  addOutputJobCount(input) {
+    if (input == null || isNaN(Number(input))) return;
+    this.outputJobCount += Number(input);
+  }
+
   addAreComplete(inputJobIDs) {
     this._toSet(
       inputJobIDs,
@@ -419,7 +425,7 @@ class Group {
       newLinkedTransIDs,
     } = this._buildNewGroupData(jobArray);
 
-    this.updateOutputJobCount(newOutputJobCount);
+    this.addOutputJobCount(newOutputJobCount);
     this.addMaterialIDs(newMaterialIDs);
     this.addIncludedJobIDs(newIncludedJobIDs);
     this.addIncludedTypeIDs(newJobTypeIDs);

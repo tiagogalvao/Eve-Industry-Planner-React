@@ -1,6 +1,5 @@
 import { useContext } from "react";
 import { EveIDsContext, EvePricesContext } from "../../Context/EveDataContext";
-import { jobTypes } from "../../Context/defaultValues";
 import { IsLoggedInContext, UsersContext } from "../../Context/AuthContext";
 import {
   ApplicationSettingsContext,
@@ -89,16 +88,6 @@ export function useHelperFunction() {
       return eveIDs[requestedID] || null;
     }
     return eveIDs[requestedID] || alternativeItemLocation[requestedID] || null;
-  }
-
-  function isItemBuildable(inputJobType) {
-    if (
-      inputJobType === jobTypes.manufacturing ||
-      inputJobType === jobTypes.reaction
-    ) {
-      return true;
-    }
-    return false;
   }
 
   function findParentUser() {
@@ -270,7 +259,6 @@ export function useHelperFunction() {
     findUniverseItemObject,
     importAssetsFromClipboard_IconView,
     importMultibuyFromClipboard,
-    isItemBuildable,
     readTextFromClipboard,
     sendSnackbarNotificationSuccess,
     sendSnackbarNotificationError,

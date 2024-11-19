@@ -7,7 +7,6 @@ import {
   RefreshStateContext,
 } from "../../Context/LayoutContext";
 import { useAccountManagement } from "../useAccountManagement";
-import { useFirebase } from "../useFirebase";
 import {
   EveIDsContext,
   EvePricesContext,
@@ -15,24 +14,23 @@ import {
 } from "../../Context/EveDataContext";
 import searchData from "../../RawData/searchIndex.json";
 import { ApiJobsContext } from "../../Context/JobContext";
-import { useSystemIndexFunctions } from "./useSystemIndexFunctions";
 import { useCorporationObject } from "../Account Management Hooks/Corporation Objects/useCorporationObject";
 import { useHelperFunction } from "./useHelperFunctions";
 import useCheckGlobalAppVersion from "./useCheckGlobalAppVersion";
 import getWorldData from "../../Functions/EveESI/World/getWorldData";
+import refreshMarketData from "../../Functions/MarketData/refreshMarketData";
+import refreshSystemIndexes from "../../Functions/System Indexes/refreshSystemInde";
 
 export function useRefreshApiData() {
   const { users } = useContext(UsersContext);
   const { updateApiJobs } = useContext(ApiJobsContext);
   const { updateDialogData } = useContext(DialogDataContext);
   const { eveIDs, updateEveIDs } = useContext(EveIDsContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
   const { updateSystemIndexData } = useContext(SystemIndexContext);
   const { updateRefreshState } = useContext(RefreshStateContext);
   const { buildApiArray, checkUserClaims, storeESIData } =
     useAccountManagement();
-  const { refreshItemPrices } = useFirebase();
-  const { refreshSystemIndexes } = useSystemIndexFunctions();
   const { updateCorporationObject } = useCorporationObject();
   const { findParentUser } = useHelperFunction();
 
@@ -68,7 +66,7 @@ export function useRefreshApiData() {
     const esiObjectsArray = (await Promise.all(esiObjectsPromises)).flat();
     await storeESIData(esiObjectsArray);
     updateCorporationObject(esiObjectsArray);
-    const itemPricePromise = refreshItemPrices(parentUser);
+    const itemPricePromise = refreshMarketData(evePrices);
     const systemIndexPromise = refreshSystemIndexes();
     const newAPIArray = buildApiArray(users, esiObjectsArray);
 

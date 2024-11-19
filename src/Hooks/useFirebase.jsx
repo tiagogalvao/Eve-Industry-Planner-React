@@ -5,7 +5,7 @@ import {
   UsersContext,
   UserWatchlistContext,
 } from "../Context/AuthContext";
-import { appCheck, firestore, performance } from "../firebase";
+import { firestore, performance } from "../firebase";
 import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { trace } from "firebase/performance";
 import {
@@ -15,7 +15,6 @@ import {
   JobStatusContext,
   LinkedIDsContext,
 } from "../Context/JobContext";
-import { getToken } from "firebase/app-check";
 import {
   EveIDsContext,
   EvePricesContext,
@@ -34,7 +33,7 @@ import Group from "../Classes/groupsConstructor";
 import ApplicationSettingsObject from "../Classes/applicationSettingsConstructor";
 import JobSnapshot from "../Classes/jobSnapshotConstructor";
 import Job from "../Classes/jobConstructor";
-import getCurrentFirebaseUser from "../Functions/Firebase/currentFirebaseUser";
+import getMarketData from "../Functions/MarketData/findMarketData";
 
 export function useFirebase() {
   const { updateUsers } = useContext(UsersContext);
@@ -72,11 +71,9 @@ export function useFirebase() {
   const { serverStatus } = useEveApi();
   const { updateCorporationObject } = useCorporationObject();
   const { findParentUser } = useHelperFunction();
-  const { DEFAULT_ITEM_REFRESH_PERIOD, DEFAULT_ARCHIVE_REFRESH_PERIOD } =
-    GLOBAL_CONFIG;
+  const { DEFAULT_ARCHIVE_REFRESH_PERIOD } = GLOBAL_CONFIG;
 
   const parentUser = findParentUser();
-  const uid = getCurrentFirebaseUser();
 
   async function updateMainUserDoc(settingsObject) {
     let updateObject = {
@@ -105,102 +102,6 @@ export function useFirebase() {
       }
     );
   };
-
-  const getItemPriceBulk = async (array) => {
-    try {
-      const appCheckToken = await getToken(appCheck, true);
-      const itemsPricePromise = await fetch(
-        `${import.meta.env.VITE_APIURL}/market-data`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Firebase-AppCheck": appCheckToken.token,
-            accountID: uid,
-            appVersion: __APP_VERSION__,
-          },
-          body: JSON.stringify({
-            idArray: array,
-          }),
-        }
-      );
-      const itemsPriceJson = await itemsPricePromise.json();
-      if (!itemsPricePromise.ok) return [];
-      return itemsPriceJson;
-    } catch (err) {
-      console.log(err);
-      return [];
-    }
-  };
-
-  async function getItemPrices(idArray, userObj) {
-    if (!idArray || idArray.length === 0) return {};
-
-    const requiredIDs = buildRequiredPriceObjects(idArray);
-
-    const returnedPromise = await Promise.all(
-      generateItemPriceChunkRequests(requiredIDs)
-    );
-    return convertItemPriceResponseToObject(returnedPromise);
-
-    function buildRequiredPriceObjects(inputIDArray) {
-      const requestIDs = new Set();
-      for (const id of inputIDArray) {
-        const priceObject = evePrices[id];
-        if (priceObject) continue;
-        requestIDs.add(id);
-      }
-      return [...requestIDs];
-    }
-  }
-
-  async function refreshItemPrices(userObj) {
-    const outdatedPriceIDs = new Set();
-    const chosenRefreshPoint =
-      Date.now() - DEFAULT_ITEM_REFRESH_PERIOD * 24 * 60 * 60 * 1000;
-
-    Object.values(evePrices).forEach((item) => {
-      if (item.lastUpdated <= chosenRefreshPoint) {
-        outdatedPriceIDs.add(item.typeID);
-      }
-    });
-
-    const returnPromiseArray = await Promise.all(
-      generateItemPriceChunkRequests([...outdatedPriceIDs])
-    );
-
-    return convertItemPriceResponseToObject(returnPromiseArray);
-  }
-
-  function generateItemPriceChunkRequests(requestArray) {
-    const MAX_CHUNK_SIZE = 500;
-    const returnPromises = [];
-    const t = trace(performance, "GetItemPrices");
-    if (!requestArray || requestArray.length === 0) return returnPromises;
-
-    t.start();
-
-    for (let x = 0; x < requestArray.length; x += MAX_CHUNK_SIZE) {
-      const chunk = requestArray.slice(x, x + MAX_CHUNK_SIZE);
-      returnPromises.push(getItemPriceBulk(chunk));
-    }
-    t.stop();
-    return returnPromises;
-  }
-
-  function convertItemPriceResponseToObject(responseArray) {
-    const responseObject = {};
-    for (let data of responseArray) {
-      if (Array.isArray(data)) {
-        data.forEach((priceObject) => {
-          responseObject[priceObject.typeID] = priceObject;
-        });
-      } else {
-        responseObject[data.typeID] = data;
-      }
-    }
-    return responseObject;
-  }
 
   const getArchivedJobData = async (typeID) => {
     let newArchivedJobsArray = [...archivedJobs];
@@ -288,7 +189,10 @@ export function useFirebase() {
             newUserJobSnapshot.push(jobSnapshot);
           });
 
-          const itemPriceResult = await getItemPrices([...priceIDRequest]);
+          const itemPriceResult = await getMarketData(
+            priceIDRequest,
+            evePrices
+          );
           newUserJobSnapshot.sort((a, b) => {
             if (a.name < b.name) {
               return -1;
@@ -357,7 +261,10 @@ export function useFirebase() {
             });
             newWatchlistItems.push(item);
           });
-          const itemPriceResult = await getItemPrices([...priceIDRequest]);
+          const itemPriceResult = await getMarketData(
+            priceIDRequest,
+            evePrices
+          );
           updateEvePrices((prev) => ({
             ...prev,
             ...itemPriceResult,
@@ -572,9 +479,7 @@ export function useFirebase() {
 
   return {
     getArchivedJobData,
-    getItemPrices,
     updateMainUserDoc,
-    refreshItemPrices,
     userGroupDataListener,
     userJobListener,
     userJobSnapshotListener,

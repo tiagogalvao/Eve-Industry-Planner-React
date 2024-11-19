@@ -130,7 +130,9 @@ export function useDeleteMultipleJobs() {
           const matchedSnapshot = userJobSnapshot.find(
             (i) => i.jobID === parentJob.jobID
           );
-          matchedSnapshot.setSnapshot(parentJob);
+          if (matchedSnapshot) {
+            matchedSnapshot.setSnapshot(parentJob);
+          }
 
           jobsToSave.add(parentJob.jobID);
         }

@@ -13,6 +13,7 @@ import { JobArrayContext } from "../../../../../../Context/JobContext";
 import { useMaterialCostCalculations } from "../../../../../../Hooks/GeneralHooks/useMaterialCostCalculations";
 import { useHelperFunction } from "../../../../../../Hooks/GeneralHooks/useHelperFunctions";
 import { ApplicationSettingsContext } from "../../../../../../Context/LayoutContext";
+import checkJobTypeIsBuildable from "../../../../../../Functions/Helper/checkJobTypeIsBuildable";
 
 const { PRIMARY_THEME, SECONDARY_THEME } = GLOBAL_CONFIG;
 
@@ -35,7 +36,7 @@ export function MaterialCostRow_MaterialPricePanel({
   const { applicationSettings } = useContext(ApplicationSettingsContext);
   const [displayPopover, updateDisplayPopover] = useState(null);
   const { calculateMaterialCostFromChildJobs } = useMaterialCostCalculations();
-  const { findItemPriceObject, isItemBuildable } = useHelperFunction();
+  const { findItemPriceObject } = useHelperFunction();
 
   const itemPriceObject = findItemPriceObject(material.typeID);
   const marketObject = itemPriceObject[marketSelect];
@@ -124,7 +125,7 @@ export function MaterialCostRow_MaterialPricePanel({
           justifyContent="center"
           sx={{ display: "flex" }}
         >
-          {isItemBuildable(material.jobType) ? (
+          {checkJobTypeIsBuildable(material.jobType) ? (
             <>
               <Tooltip
                 title="Click To Compare Material Build Cost"
@@ -228,7 +229,7 @@ export function MaterialCostRow_MaterialPricePanel({
             </Typography>
           </Tooltip>
         </Grid>
-        {isItemBuildable(material.jobType) && (
+        {checkJobTypeIsBuildable(material.jobType) && (
           <Grid item xs={12} sx={{ marginTop: 1 }}>
             <Typography
               sx={{ typography: STANDARD_TEXT_FORMAT }}
@@ -272,7 +273,7 @@ export function MaterialCostRow_MaterialPricePanel({
             {totalPurchaseCost.toLocaleString(undefined, TWO_DECIMAL_PLACES)}
           </Typography>
         </Grid>
-        {isItemBuildable(material.jobType) && (
+        {checkJobTypeIsBuildable(material.jobType) && (
           <Grid item xs={12}>
             <Typography
               sx={{ typography: { xs: "caption", sm: "body2" } }}

@@ -1,9 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Grid, Paper, Popover, Typography } from "@mui/material";
 import { JobArrayContext } from "../../../../../../../Context/JobContext";
-import { useFirebase } from "../../../../../../../Hooks/useFirebase";
 import { useJobBuild } from "../../../../../../../Hooks/useJobBuild";
-import { useJobManagement } from "../../../../../../../Hooks/useJobManagement";
 import { ImportingStateLayout_ChildJobPopoverFrame } from "./fetchState";
 import { ChildJobMaterials_ChildJobPopoverFrame } from "./childJobMaterials";
 import { ChildJobSwitcher_ChildJobPopoverFrame } from "./switchChildJob";
@@ -12,9 +10,10 @@ import { ChildJobMaterialTotalCosts_ChildJobPopoverFrame } from "./childJobTotal
 import { useMaterialCostCalculations } from "../../../../../../../Hooks/GeneralHooks/useMaterialCostCalculations";
 import { useManageGroupJobs } from "../../../../../../../Hooks/GroupHooks/useManageGroupJobs";
 import { ButtonSelectionLogic_ChildJobPopoverFrame } from "./buttonSelectionLogic";
-import { useHelperFunction } from "../../../../../../../Hooks/GeneralHooks/useHelperFunctions";
 import { ApplicationSettingsContext } from "../../../../../../../Context/LayoutContext";
 import { STANDARD_TEXT_FORMAT } from "../../../../../../../Context/defaultValues";
+import getMarketData from "../../../../../../../Functions/MarketData/findMarketData";
+import { EvePricesContext } from "../../../../../../../Context/EveDataContext";
 
 export function ChildJobPopoverFrame({
   activeJob,
@@ -37,19 +36,16 @@ export function ChildJobPopoverFrame({
 }) {
   const { jobArray } = useContext(JobArrayContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
+  const { evePrices } = useContext(EvePricesContext);
   const [tempPrices, updateTempPrices] = useState([]);
   const [jobImportState, updateJobImportState] = useState(false);
   const [jobDisplay, setJobDisplay] = useState(0);
   const [childJobObjects, updateChildJobObjects] = useState([]);
   const [fetchError, updateFetchError] = useState(false);
-  const { getItemPrices } = useFirebase();
   const { buildJob } = useJobBuild();
-  const { generatePriceRequestFromJob } = useJobManagement();
   const { calculateMaterialCostFromChildJobs } = useMaterialCostCalculations();
   const { findMaterialJobIDInGroup } = useManageGroupJobs();
-  const { findParentUser } = useHelperFunction();
 
-  const parentUser = findParentUser();
   const childJobsLocation = activeJob.build.childJobs[material.typeID];
   const currentJob = childJobObjects[jobDisplay];
   const isExistingJobInGroup = useRef(false);
@@ -73,15 +69,16 @@ export function ChildJobPopoverFrame({
           itemQty: material.quantity,
           parentJobs: [activeJob.jobID],
           groupID: activeJob.groupID,
-          systemID: activeJob.build.setup[activeJob.layout.setupToEdit].systemID,
+          systemID:
+            activeJob.build.setup[activeJob.layout.setupToEdit].systemID,
         });
         if (!newJob) {
           updateFetchError(true);
         }
 
-        const itemPriceResult = await getItemPrices(
-          generatePriceRequestFromJob(newJob),
-          parentUser
+        const itemPriceResult = await getMarketData(
+          newJob.getMaterialIDs(),
+          evePrices
         );
 
         updateTempPrices((prev) => ({ ...prev, ...itemPriceResult }));

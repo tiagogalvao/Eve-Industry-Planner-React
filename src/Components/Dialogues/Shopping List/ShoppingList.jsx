@@ -22,7 +22,6 @@ import {
   EveIDsContext,
   EvePricesContext,
 } from "../../../Context/EveDataContext";
-import { useFirebase } from "../../../Hooks/useFirebase";
 import { useShoppingList } from "../../../Hooks/GeneralHooks/useShoppingList";
 import { useHelperFunction } from "../../../Hooks/GeneralHooks/useHelperFunctions";
 import {
@@ -35,6 +34,7 @@ import { ListDataFrame_ShoppingListDialog } from "./shoppingListDataFrame";
 import { SelectAssetLocation_ShoppingListDialog } from "./assetLocationsSelection";
 import { useAssetHelperHooks } from "../../../Hooks/AssetHooks/useAssetHelper";
 import { AssetsFromClipboardButton_ShoppingList } from "./assetsFromClipboardButton";
+import getMarketData from "../../../Functions/MarketData/findMarketData";
 
 export function ShoppingListDialog() {
   const { isLoggedIn } = useContext(IsLoggedInContext);
@@ -46,7 +46,7 @@ export function ShoppingListDialog() {
   } = useContext(ShoppingListContext);
   const { updateEveIDs } = useContext(EveIDsContext);
   const { users } = useContext(UsersContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
   const { getAssetLocationList } = useCharAssets();
   const {
@@ -69,7 +69,6 @@ export function ShoppingListDialog() {
     countAssetQuantityFromMap,
     getRequestedAssets,
   } = useAssetHelperHooks();
-  const { getItemPrices } = useFirebase();
   const [childJobDisplay, updateChildJobDisplay] = useState(false);
   const [displayData, updateDisplayData] = useState([]);
   const [volumeTotal, updateVolumeTotal] = useState(0);
@@ -101,7 +100,7 @@ export function ShoppingListDialog() {
       shoppingList.forEach((item) => {
         itemIDs.add(item.typeID);
       });
-      let itemPrices = await getItemPrices([...itemIDs], parentUser);
+      let itemPrices = await getMarketData(itemIDs, evePrices);
 
       const selectedAssets = await getRequestedAssets(
         selectedCharacter === "allUsers"

@@ -1,11 +1,9 @@
 import { Autocomplete, Grid, Paper, TextField } from "@mui/material";
-import { useContext, useMemo } from "react";
-import { UsersContext } from "../../Context/AuthContext";
+import { useContext } from "react";
 import { EvePricesContext } from "../../Context/EveDataContext";
-import { useFirebase } from "../../Hooks/useFirebase";
 import { useJobBuild } from "../../Hooks/useJobBuild";
 import itemList from "../../RawData/searchIndex.json";
-import { useHelperFunction } from "../../Hooks/GeneralHooks/useHelperFunctions";
+import getMarketData from "../../Functions/MarketData/findMarketData";
 
 export function UpcomingChangesSearch({
   updateTranqItem,
@@ -13,12 +11,9 @@ export function UpcomingChangesSearch({
   updateItemLoad,
   updateLoadComplete,
 }) {
-  const { users } = useContext(UsersContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
   const { buildJob } = useJobBuild();
-  const { getItemPrices } = useFirebase();
-  const { findParentUser } = useHelperFunction();
-  const parentUser = findParentUser();
+
   return (
     <Paper
       square
@@ -63,9 +58,9 @@ export function UpcomingChangesSearch({
                 });
               }
 
-              let itemPriceResult = await getItemPrices(
-                [...priceIDRequest],
-                parentUser
+              let itemPriceResult = await getMarketData(
+                priceIDRequest,
+                evePrices
               );
               updateEvePrices((prev) => ({
                 ...prev,

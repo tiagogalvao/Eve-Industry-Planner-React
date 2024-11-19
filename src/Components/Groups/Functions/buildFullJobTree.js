@@ -12,7 +12,9 @@ async function buildFullJobTree(
   groupArray,
   applicationSettings,
   buildJobFunction,
-  recalculateJob
+  recalculateJob,
+  setNumberOfVisibleSkeletonElements,
+  buildFullItemTree = false
 ) {
   const jobIDsIncludedInGroup = retrieveJobIDsFromGroupObjects(
     groupID,
@@ -31,53 +33,43 @@ async function buildFullJobTree(
     retrievedJobs
   );
 
-  const typeIDMap = buildTypeIDMap(allJobObjects, applicationSettings, groupID);
+  const typeIDMap = buildTypeIDMap(allJobObjects, groupID);
 
   const jobIDMap = buildJobIDMap(allJobObjects);
 
   const materialRequests = generateMaterialRequests(
     requestedJobObjects,
-    typeIDMap,
     applicationSettings,
+    typeIDMap,
     groupID
   );
-
+  setNumberOfVisibleSkeletonElements(materialRequests.length);
   const newJobs = await processMaterials(
     typeIDMap,
     jobIDMap,
     materialRequests,
-    retrievedJobs,
-    [...jobArray, ...retrievedJobs],
     groupID,
     buildJobFunction,
-    recalculateJob,
-    applicationSettings
+    applicationSettings,
+    buildFullItemTree,
+    setNumberOfVisibleSkeletonElements
   );
 
-  buildParentChildRelationships([...allJobObjects, ...newJobs])
+  buildParentChildRelationships([...allJobObjects, ...newJobs]);
 
   materialTreeShaker([...allJobObjects, ...newJobs], recalculateJob);
+  setNumberOfVisibleSkeletonElements(0);
 
-  // console.log(typeIDMap);
-  // console.log(jobIDMap);
-  console.log([...allJobObjects, ...newJobs]);
-  console.log(
-    buildTypeIDMap([...allJobObjects, ...newJobs], applicationSettings, groupID)
-  );
+  return newJobs;
 }
 
-function buildTypeIDMap(inputJobs, applicationSettings, groupID) {
+function buildTypeIDMap(inputJobs, groupID) {
   const materialMap = {};
 
   for (const job of inputJobs) {
     const existingEntry = materialMap[job.itemID];
 
-    const newEntry = buildTypeIDMapObject(
-      job,
-      undefined,
-      applicationSettings,
-      groupID
-    );
+    const newEntry = buildTypeIDMapObject(job, groupID);
 
     if (existingEntry) {
       materialMap[job.itemID] = mergeTypeIDMapEntries(existingEntry, newEntry);
@@ -88,19 +80,13 @@ function buildTypeIDMap(inputJobs, applicationSettings, groupID) {
   return materialMap;
 }
 
-function buildTypeIDMapObject(job, typeIDMap, applicationSettings, groupID) {
-  const isBuildable = job.build.materials.some((material) =>
-    checkMaterialIsBuildable(material, applicationSettings)
-  );
+function buildTypeIDMapObject(job, groupID) {
   return {
     name: job.name,
     typeID: job.itemID,
     relatedJobID: job.jobID,
-    quantityRequired: job.build.products.totalQuantity,
     parentJobs: new Set(job.parentJob),
     groupID: groupID,
-    requiresRecalculation: false,
-    buildableMaterials: isBuildable,
   };
 }
 
@@ -127,8 +113,8 @@ function buildJobIDMap(inputJobs) {
 
 function generateMaterialRequests(
   inputJobs,
-  typeIDMap,
   applicationSettings,
+  typeIDMap,
   groupID
 ) {
   return inputJobs.flatMap((job) => {
@@ -136,12 +122,10 @@ function generateMaterialRequests(
       .filter(
         (material) =>
           checkMaterialIsBuildable(material, applicationSettings) &&
-          job.build.childJobs[material.typeID].length === 0
+          !typeIDMap[material.typeID]
       )
       .map((material) => ({
         typeID: material.typeID,
-        name: material.name,
-        quantityRequired: material.quantity,
         groupID: groupID,
         relatedJobID: job.jobID,
       }));
@@ -159,12 +143,11 @@ async function processMaterials(
   typeIDMap,
   jobIDMap,
   materialRequests,
-  retrievedJobs,
-  allJobObjects,
   groupID,
   buildJobFunction,
-  recalculateJob,
-  applicationSettings
+  applicationSettings,
+  buildFullItemTree,
+  setNumberOfVisibleSkeletonElements
 ) {
   const newJobs = [];
   const processingQueue = [...materialRequests];
@@ -185,32 +168,24 @@ async function processMaterials(
           newJobs,
           buildJobFunction
         );
-        addNewItemsToTypeIDMap(
-          newJobObjects,
-          typeIDMap,
-          applicationSettings,
-          groupID
-        );
+        addNewItemsToTypeIDMap(newJobObjects, typeIDMap, groupID);
         addNewItemsToJobIDMap(newJobObjects, jobIDMap);
-        updateParentAndChildJobs(Object.values(jobIDMap), typeIDMap);
+
         materialsAwaitingRequest.length = 0;
       }
       if (
         processingQueue.length === 0 &&
-        materialsAwaitingRequest.length === 0
+        materialsAwaitingRequest.length === 0 &&
+        buildFullItemTree
       ) {
-        recalulateExistingJobs(
-          typeIDMap,
-          jobIDMap,
-          recalculateJob,
-          applicationSettings
-        );
-        updateParentAndChildJobs(Object.values(jobIDMap), typeIDMap);
         const nextLevelOfRequests = generateMaterialRequests(
           Object.values(jobIDMap),
-          typeIDMap,
           applicationSettings,
+          typeIDMap,
           groupID
+        );
+        setNumberOfVisibleSkeletonElements(
+          (prev) => (prev += nextLevelOfRequests.length)
         );
         processingQueue.push(...nextLevelOfRequests);
       }
@@ -223,9 +198,7 @@ async function processMaterials(
 
 function updateExistingItemInTypeIDMap(inputMaterial, materialMap) {
   const matchedMaterial = materialMap[inputMaterial.typeID];
-  matchedMaterial.quantityRequired += inputMaterial.quantityRequired;
   matchedMaterial.parentJobs.add(inputMaterial.relatedJobID);
-  matchedMaterial.requiresRecalculation = true;
 }
 
 function manageMaterialRequestQueue(queue, newRequest) {
@@ -240,23 +213,21 @@ function manageMaterialRequestQueue(queue, newRequest) {
 function createBuildRequest(request) {
   return {
     itemID: request.typeID,
-    // itemQty: request.quantityRequired,
     groupID: request.groupID,
-    parentJobs: [request.relatedJobID], 
+    parentJobs: [request.relatedJobID],
   };
 }
 
 function updateBuildRequest(existingRequest, newRequest) {
-  // existingRequest.itemQty += newRequest.quantityRequired;
-  // existingRequest.parentJobs = [
-  //   ...new Set([...existingRequest.parentJobs, newRequest.relatedJobID]),
-  // ];
+  existingRequest.parentJobs = [
+    ...new Set([...existingRequest.parentJobs, newRequest.relatedJobID]),
+  ];
 }
 
 async function retrieveNewMaterials(queue, newJobsStorage, buildFunction) {
   try {
     const newJobs = await buildFunction(queue);
-    newJobs.forEach((i) => newJobsStorage.push(i));
+    newJobsStorage.push(...newJobs);
     return newJobs;
   } catch (err) {
     console.error("Error retrieving jobs");
@@ -264,51 +235,14 @@ async function retrieveNewMaterials(queue, newJobsStorage, buildFunction) {
   }
 }
 
-function addNewItemsToTypeIDMap(
-  newJobs,
-  typeIDMap,
-  applicationSettings,
-  groupID
-) {
+function addNewItemsToTypeIDMap(newJobs, typeIDMap, groupID) {
   for (const job of newJobs) {
-    typeIDMap[job.itemID] = buildTypeIDMapObject(
-      job,
-      typeIDMap,
-      applicationSettings,
-      groupID
-    );
+    typeIDMap[job.itemID] = buildTypeIDMapObject(job, groupID);
   }
 }
-function addNewItemsToJobIDMap(newJobs, typeIDMap) {
+function addNewItemsToJobIDMap(newJobs, jobIDMap) {
   for (const job of newJobs) {
-    typeIDMap[job.jobID] = job;
-  }
-}
-
-function recalulateExistingJobs(
-  typeIDMap,
-  jobIDMap,
-  recalculateJob,
-  applicationSettings
-) {
-  for (const mapObject of Object.values(typeIDMap)) {
-    const job = jobIDMap[mapObject.relatedJobID];
-    if (!job) continue;
-    if (mapObject.quantityRequired !== job.build.products.totalQuantity) {
-      recalculateJob(job, mapObject.quantityRequired);
-    }
-    mapObject.requiresRecalculation = false;
-  }
-}
-
-function updateParentAndChildJobs(allJobs, typeIDMap) {
-  for (const job of allJobs) {
-    job.addParentJob(typeIDMap[job.itemID]?.parentJobs);
-    job.build.materials.forEach((mat) => {
-      const typeIDObject = typeIDMap[mat.typeID];
-      if (!typeIDObject) return;
-      job.addChildJob(mat.typeID, typeIDObject.relatedJobID);
-    });
+    jobIDMap[job.jobID] = job;
   }
 }
 

@@ -10,16 +10,17 @@ import {
 } from "@mui/material";
 import { useContext, useState } from "react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { SnackBarDataContext } from "../../../../../../Context/LayoutContext";
 import { MaterialRow } from "./materialRow";
-import { useJobManagement } from "../../../../../../Hooks/useJobManagement";
 import { jobTypes } from "../../../../../../Context/defaultValues";
 import { useManageGroupJobs } from "../../../../../../Hooks/GroupHooks/useManageGroupJobs";
 import { useJobBuild } from "../../../../../../Hooks/useJobBuild";
-import { useFirebase } from "../../../../../../Hooks/useFirebase";
-import { EvePricesContext } from "../../../../../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../../../../../Context/EveDataContext";
 import { useHelperFunction } from "../../../../../../Hooks/GeneralHooks/useHelperFunctions";
 import Job from "../../../../../../Classes/jobConstructor";
+import getMissingESIData from "../../../../../../Functions/Shared/getMissingESIData";
 
 export function RawResourceList({
   activeJob,
@@ -30,18 +31,16 @@ export function RawResourceList({
   parentChildToEdit,
   updateParentChildToEdit,
 }) {
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [displayType, updateDisplyType] = useState(
     activeJob.layout?.resourceDisplayType || "all"
   );
   const { findMaterialJobIDInGroup } = useManageGroupJobs();
   const { buildJob } = useJobBuild();
-  const { generatePriceRequestFromJob } = useJobManagement();
-  const { getItemPrices } = useFirebase();
-  const { findParentUser, writeTextToClipboard } = useHelperFunction();
-
-  const parentUser = findParentUser();
+  const { writeTextToClipboard } = useHelperFunction();
 
   if (!activeJob.build.setup[activeJob.layout.setupToEdit]) return null;
 
@@ -223,15 +222,6 @@ export function RawResourceList({
     if (buildRequestArray.length === 0) return;
     const newJobs = await buildJob(buildRequestArray);
 
-    const requiredItemPricesSet = newJobs.reduce((prev, job) => {
-      return new Set([...prev, ...generatePriceRequestFromJob(job)]);
-    }, new Set());
-
-    const itemPricePromise = getItemPrices(
-      [...requiredItemPricesSet],
-      parentUser
-    );
-
     activeJob.build.materials.forEach(({ jobType, typeID }) => {
       if (jobType !== jobTypes.manufacturing && jobTypes !== jobTypes.reaction)
         return;
@@ -257,7 +247,8 @@ export function RawResourceList({
       newTempChildJobs[typeID] = matchedJob;
     });
 
-    const itemPriceResult = await itemPricePromise;
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData(newJobs, evePrices, systemIndexData);
 
     updateTemporaryChildJobs(newTempChildJobs);
     updateParentChildToEdit((prev) => ({
@@ -267,8 +258,9 @@ export function RawResourceList({
 
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
     }));
+    updateSystemIndexData((prev) => ({ ...prev, ...requestedSystemIndexes }));
     setJobModified(true);
   }
 }

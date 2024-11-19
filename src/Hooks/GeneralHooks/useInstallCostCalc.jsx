@@ -60,6 +60,8 @@ export function useInstallCostsCalc() {
 
     const cloneValue = findCloneValue(inputSetup.selectedCharacter);
 
+    console.table(estimatedItemValue,facilityModifier,facilityTax,systemIndexValue)
+
     const taxModifierTotal =
       estimatedItemValue *
       (systemIndexValue * facilityModifier +
@@ -79,6 +81,8 @@ export function useInstallCostsCalc() {
 
     const installCost = jobGrossCost + taxModifierTotal;
 
+    console.log(installCost)
+
     function findSystemIndex(
       requiredSystemID,
       jobType,
@@ -94,7 +98,7 @@ export function useInstallCostsCalc() {
         );
       } else {
         return alternativeSystemIndexData[requiredSystemID]?.[
-          jobTypeMapping[jobType]
+          jobTypeMapping[jobType] || 0
         ];
       }
     }

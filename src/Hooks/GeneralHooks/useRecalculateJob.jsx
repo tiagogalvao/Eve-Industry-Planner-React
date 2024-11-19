@@ -33,7 +33,7 @@ export function useRecalcuateJob() {
     const structureData = addDefaultStructure(inputJob.jobType);
 
     inputJob.build.setup = {};
-    newSetupQuantities.forEach((newItem) => {
+    newSetupQuantities.forEach((newItem, index) => {
       const newSetup = new Setup({
         ME,
         TE,
@@ -57,6 +57,12 @@ export function useRecalcuateJob() {
       newSetup.estimatedInstallCost = calculateInstallCostFromJob(newSetup);
 
       inputJob.build.setup[newSetup.id] = newSetup;
+
+      console.log(newSetup)
+
+      if (!index) {
+        inputJob.layout.setupToEdit = newSetup.id;
+      }
     });
 
     const newTotalQuantities = calculateJobMaterialQuantities(

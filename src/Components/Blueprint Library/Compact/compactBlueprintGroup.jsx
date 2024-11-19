@@ -14,9 +14,7 @@ import { JobArrayContext } from "../../../Context/JobContext";
 import AddIcon from "@mui/icons-material/Add";
 import { ArchiveBpData } from "../blueprintArchiveData";
 import { useJobBuild } from "../../../Hooks/useJobBuild";
-import { useJobManagement } from "../../../Hooks/useJobManagement";
-import { useFirebase } from "../../../Hooks/useFirebase";
-import { EvePricesContext } from "../../../Context/EveDataContext";
+import { EvePricesContext, SystemIndexContext } from "../../../Context/EveDataContext";
 import { UserJobSnapshotContext } from "../../../Context/AuthContext";
 import { getAnalytics, logEvent } from "firebase/analytics";
 import { trace } from "@firebase/performance";
@@ -25,19 +23,18 @@ import { useHelperFunction } from "../../../Hooks/GeneralHooks/useHelperFunction
 import JobSnapshot from "../../../Classes/jobSnapshotConstructor";
 import addNewJobToFirebase from "../../../Functions/Firebase/addNewJob";
 import uploadJobSnapshotsToFirebase from "../../../Functions/Firebase/uploadJobSnapshots";
+import getMissingESIData from "../../../Functions/Shared/getMissingESIData";
 
 export function CompactBlueprintGroup({ bpID, blueprintResults }) {
   const { updateJobArray } = useContext(JobArrayContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } = useContext(SystemIndexContext);
   const { userJobSnapshot, updateUserJobSnapshot } = useContext(
     UserJobSnapshotContext
   );
   const [archiveOpen, updateArchiveOpen] = useState(false);
   const [loadingBuild, updateLoadingBuild] = useState(false);
   const { buildJob, checkAllowBuild } = useJobBuild();
-  const { generatePriceRequestFromJob } = useJobManagement();
-
-  const { getItemPrices } = useFirebase();
   const { findParentUser, sendSnackbarNotificationSuccess } =
     useHelperFunction();
   const analytics = getAnalytics();
@@ -126,11 +123,6 @@ export function CompactBlueprintGroup({ bpID, blueprintResults }) {
                       return;
                     }
 
-                    const itemPricePromise = getItemPrices(
-                      generatePriceRequestFromJob(newJob),
-                      parentUser
-                    );
-
                     newJobArray.push(newJob);
                     newSnapshotArray.push(new JobSnapshot(newJob));
 
@@ -143,12 +135,17 @@ export function CompactBlueprintGroup({ bpID, blueprintResults }) {
                       name: newJob.name,
                       itemID: newJob.itemID,
                     });
-                    const itemPriceResult = await itemPricePromise;
+
+                    const {requestedMarketData, requestedSystemIndexes} = await getMissingESIData(newJob, evePrices, systemIndexData)
 
                     updateEvePrices((prev) => ({
                       ...prev,
-                      ...itemPriceResult,
+                      ...requestedMarketData,
                     }));
+                    updateSystemIndexData((prev) => ({
+                      ...prev,
+                      ...requestedSystemIndexes
+                    }))
                     updateUserJobSnapshot(newSnapshotArray);
                     updateJobArray(newJobArray);
                     sendSnackbarNotificationSuccess(`${newJob.name} Added`, 3);

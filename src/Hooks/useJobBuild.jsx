@@ -361,6 +361,8 @@ export function useJobBuild() {
       );
       setupLocation[nextObject.id].estimatedInstallCost =
         calculateInstallCostFromJob(setupLocation[nextObject.id]);
+
+      console.log({ ...setupLocation[nextObject.id] });
     }
 
     const newTotalQuantities = calculateJobMaterialQuantities(setupLocation);

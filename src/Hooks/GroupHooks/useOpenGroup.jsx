@@ -5,24 +5,23 @@ import {
   DataExchangeContext,
   LoadingTextContext,
 } from "../../Context/LayoutContext";
-import { useFirebase } from "../useFirebase";
 import manageListenerRequests from "../../Functions/Firebase/manageListenerRequests";
 import {
   FirebaseListenersContext,
   IsLoggedInContext,
 } from "../../Context/AuthContext";
+import getMarketData from "../../Functions/MarketData/findMarketData";
 
 export function useOpenGroup() {
   const { groupArray, updateJobArray } = useContext(JobArrayContext);
   const { updateActiveGroup } = useContext(ActiveJobContext);
   const { updateDataExchange } = useContext(DataExchangeContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
   const { updateLoadingText } = useContext(LoadingTextContext);
   const { firebaseListeners, updateFirebaseListeners } = useContext(
     FirebaseListenersContext
   );
   const { isLoggedIn } = useContext(IsLoggedInContext);
-  const { getItemPrices } = useFirebase();
 
   async function openGroup(inputGroupID) {
     let requestedGroup = groupArray.find((i) => i.groupID === inputGroupID);
@@ -31,7 +30,10 @@ export function useOpenGroup() {
     }
     updateDataExchange((prev) => !prev);
 
-    const itemPriceRequest = getItemPrices([...requestedGroup.materialIDs]);
+    const itemPriceRequest = getMarketData(
+      requestedGroup.materialIDs,
+      evePrices
+    );
     updateLoadingText((prevObj) => ({
       ...prevObj,
       jobData: true,

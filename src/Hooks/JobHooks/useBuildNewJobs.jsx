@@ -9,10 +9,11 @@ import {
 import { JobArrayContext } from "../../Context/JobContext";
 import { DataExchangeContext } from "../../Context/LayoutContext";
 import { useJobBuild } from "../useJobBuild";
-import { useJobManagement } from "../useJobManagement";
 import { useHelperFunction } from "../GeneralHooks/useHelperFunctions";
-import { useFirebase } from "../useFirebase";
-import { EvePricesContext } from "../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../Context/EveDataContext";
 import { logEvent } from "firebase/analytics";
 import Group from "../../Classes/groupsConstructor";
 import JobSnapshot from "../../Classes/jobSnapshotConstructor";
@@ -20,6 +21,7 @@ import uploadGroupsToFirebase from "../../Functions/Firebase/uploadGroupData";
 import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
 import uploadJobSnapshotsToFirebase from "../../Functions/Firebase/uploadJobSnapshots";
 import manageListenerRequests from "../../Functions/Firebase/manageListenerRequests";
+import getMissingESIData from "../../Functions/Shared/getMissingESIData";
 
 function useBuildNewJobs() {
   const { userJobSnapshot, updateUserJobSnapshot } = useContext(
@@ -28,11 +30,11 @@ function useBuildNewJobs() {
   const { jobArray, groupArray, updateJobArray, updateGroupArray } =
     useContext(JobArrayContext);
   const { updateDataExchange } = useContext(DataExchangeContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { isLoggedIn } = useContext(IsLoggedInContext);
   const { buildJob } = useJobBuild();
-  const { getItemPrices, userJobListener } = useFirebase();
-  const { generatePriceRequestFromJob } = useJobManagement();
   const { findParentUser, sendSnackbarNotificationSuccess } =
     useHelperFunction();
   const { firebaseListeners, updateFirebaseListeners } = useContext(
@@ -63,10 +65,9 @@ function useBuildNewJobs() {
     for (let jobObject of newJobObjects) {
       priceRequestSet = new Set([
         ...priceRequestSet,
-        ...generatePriceRequestFromJob(jobObject),
+        ...jobObject.getMaterialIDs(),
       ]);
     }
-    const itemPriceRequest = getItemPrices([...priceRequestSet], parentUser);
 
     if (addNewGroup) {
       newGroup = new Group();
@@ -121,7 +122,8 @@ function useBuildNewJobs() {
       isLoggedIn
     );
 
-    const itemPriceResult = await itemPriceRequest;
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData(newJobObjects, evePrices, systemIndexData);
 
     if (requiresGroupDocSave) {
       updateGroupArray(newGroupArray);
@@ -132,7 +134,11 @@ function useBuildNewJobs() {
     updateUserJobSnapshot(newUserJobSnapshot);
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
+    }));
+    updateSystemIndexData((prev) => ({
+      ...prev,
+      ...requestedSystemIndexes,
     }));
     updateDataExchange(false);
 

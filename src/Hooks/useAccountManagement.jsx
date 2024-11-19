@@ -42,12 +42,12 @@ import {
 import { httpsCallable } from "firebase/functions";
 import { RefreshTokens } from "../Components/Auth/RefreshToken";
 import searchData from "../RawData/searchIndex.json";
-import { fetchSystemIndexes } from "./FetchDataHooks/fetchSystemIndexes";
 import { useBuildCorporationState } from "./Account Management Hooks/Corporation State/useBuildCorporationState";
 import { useRemoveCorporatinState } from "./Account Management Hooks/Corporation State/useRemoveCorporationState";
 import { useUpdateCorporationState } from "./Account Management Hooks/Corporation State/useUpdateCorporationState";
 import { useHelperFunction } from "./GeneralHooks/useHelperFunctions";
 import getWorldData from "../Functions/EveESI/World/getWorldData";
+import getSystemIndexes from "../Functions/System Indexes/findSystemIndex";
 
 export function useAccountManagement() {
   const { updateIsLoggedIn } = useContext(IsLoggedInContext);
@@ -759,10 +759,7 @@ export function useAccountManagement() {
       )
     );
 
-    const systemIndexData = await fetchSystemIndexes(
-      [...requestIDs],
-      userObject
-    );
+    const systemIndexData = await getSystemIndexes(requestIDs);
 
     return systemIndexData;
   };

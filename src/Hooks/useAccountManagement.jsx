@@ -21,6 +21,7 @@ import {
   CorpEsiDataContext,
   EveIDsContext,
   PersonalESIDataContext,
+  SystemIndexContext,
 } from "../Context/EveDataContext";
 import { UserLoginUIContext } from "../Context/LayoutContext";
 import {
@@ -55,6 +56,7 @@ export function useAccountManagement() {
   const { updateGroupArray, updateJobArray } = useContext(JobArrayContext);
   const { updateUserJobSnapshot } = useContext(UserJobSnapshotContext);
   const { eveIDs, updateEveIDs } = useContext(EveIDsContext);
+  const { systemIndexData, updateSystemIndexData } = useContext(SystemIndexContext);
   const { setJobStatus } = useContext(JobStatusContext);
   const { updateActiveJob, updateActiveGroup } = useContext(ActiveJobContext);
   const { updateArchivedJobs } = useContext(ArchivedJobsContext);
@@ -748,7 +750,7 @@ export function useAccountManagement() {
     updateCorpEsiTransactions(newCorpESiTransactions);
   };
 
-  const getSystemIndexData = async (userObject) => {
+  const getSystemIndexDataFromUserStructures = async (userObject) => {
     const manufacturingStructures =
       userObject.settings.structures.manufacturing;
     const reactionStructures = userObject.settings.structures.reaction;
@@ -759,9 +761,9 @@ export function useAccountManagement() {
       )
     );
 
-    const systemIndexData = await getSystemIndexes(requestIDs);
+    const retrievedSystemIndexes = await getSystemIndexes(requestIDs, systemIndexData);
 
-    return systemIndexData;
+    return retrievedSystemIndexes;
   };
 
   function saveCharacterAssets(characterHash, esiAssets) {
@@ -787,7 +789,7 @@ export function useAccountManagement() {
     buildMainUser,
     checkUserClaims,
     failedUserRefresh,
-    getSystemIndexData,
+    getSystemIndexDataFromUserStructures,
     getLocationNames,
     logUserOut,
     removeUserEsiData,

@@ -100,7 +100,9 @@ export function useDeleteSingleJob() {
         const matchedSnapshot = userJobSnapshot.find(
           (i) => i.jobID === child.jobID
         );
-        matchedSnapshot.setSnapshot(child);
+        if (matchedSnapshot) {
+          matchedSnapshot.setSnapshot(child);
+        }
 
         jobsToSave.add(child.jobID);
       }

@@ -16,45 +16,6 @@ export function useHelperFunction() {
   const { userDataFetch } = useContext(UserLoginUIContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
 
-  function Add_RemovePendingChildJobs(
-    materialChildJobObject,
-    reqiredID,
-    isAdd
-  ) {
-    const newChildJobstoAdd = new Set(materialChildJobObject?.add);
-    const newChildJobsToRemove = new Set(materialChildJobObject?.remove);
-
-    if (isAdd) {
-      newChildJobstoAdd.add(reqiredID);
-      newChildJobsToRemove.delete(reqiredID);
-    } else {
-      newChildJobstoAdd.delete(reqiredID);
-      newChildJobsToRemove.add(reqiredID);
-    }
-    return {
-      newChildJobstoAdd: [...newChildJobstoAdd],
-      newChildJobsToRemove: [...newChildJobsToRemove],
-    };
-  }
-
-  function Add_RemovePendingParentJobs(parentJobObject, reqiredID, isAdd) {
-    const newParentJobsToAdd = new Set(parentJobObject.add);
-    const newParentJobsToRemove = new Set(parentJobObject.remove);
-
-    if (isAdd) {
-      newParentJobsToAdd.add(reqiredID);
-      newParentJobsToRemove.delete(reqiredID);
-    } else {
-      newParentJobsToAdd.delete(reqiredID);
-      newParentJobsToRemove.add(reqiredID);
-    }
-
-    return {
-      newParentJobsToAdd: [...newParentJobsToAdd],
-      newParentJobsToRemove: [...newParentJobsToRemove],
-    };
-  }
-
   function findItemPriceObject(requestedTypeID, alternativePriceObject = {}) {
     const missingItemCost = {
       jita: {
@@ -249,8 +210,6 @@ export function useHelperFunction() {
   }
 
   return {
-    Add_RemovePendingChildJobs,
-    Add_RemovePendingParentJobs,
     checkClipboardReadPermissions,
     checkDisplayTutorials,
     findItemPriceObject,

@@ -24,6 +24,8 @@ import JobSnapshot from "../../../Classes/jobSnapshotConstructor";
 import addNewJobToFirebase from "../../../Functions/Firebase/addNewJob";
 import uploadJobSnapshotsToFirebase from "../../../Functions/Firebase/uploadJobSnapshots";
 import getMissingESIData from "../../../Functions/Shared/getMissingESIData";
+import { useInstallCostsCalc } from "../../../Hooks/GeneralHooks/useInstallCostCalc";
+import recalculateInstallCostsWithNewData from "../../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
 
 export function CompactBlueprintGroup({ bpID, blueprintResults }) {
   const { updateJobArray } = useContext(JobArrayContext);
@@ -37,6 +39,7 @@ export function CompactBlueprintGroup({ bpID, blueprintResults }) {
   const { buildJob, checkAllowBuild } = useJobBuild();
   const { findParentUser, sendSnackbarNotificationSuccess } =
     useHelperFunction();
+    const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const analytics = getAnalytics();
   const t = trace(performance, "CreateJobProcessFull");
 
@@ -136,7 +139,15 @@ export function CompactBlueprintGroup({ bpID, blueprintResults }) {
                       itemID: newJob.itemID,
                     });
 
-                    const {requestedMarketData, requestedSystemIndexes} = await getMissingESIData(newJob, evePrices, systemIndexData)
+                    const { requestedMarketData, requestedSystemIndexes } = await getMissingESIData(newJob, evePrices, systemIndexData)
+                    
+                    recalculateInstallCostsWithNewData(
+                      newJob,
+                      calculateInstallCostFromJob,
+                      requestedMarketData,
+                      requestedSystemIndexes
+                    );
+                    
 
                     updateEvePrices((prev) => ({
                       ...prev,

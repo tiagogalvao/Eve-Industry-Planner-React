@@ -118,7 +118,7 @@ export default function EditJob_New({ colorMode }) {
         for (let setup of Object.values(matchedJob.build.setup)) {
           setup.estimatedInstallCost = calculateInstallCostFromJob(
             setup,
-            undefined,
+            requestedMarketData,
             requestedSystemIndexes
           );
         }

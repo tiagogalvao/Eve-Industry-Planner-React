@@ -12,6 +12,7 @@ import { UserJobSnapshotContext } from "../../../../../../Context/AuthContext";
 import { JobArrayContext } from "../../../../../../Context/JobContext";
 import { AvailableChildJobs_Purchasing } from "./availableChildJobs";
 import { ExistingChildJobs_Purchasing } from "./existingChildJobs";
+import getCurrentLinkedChildJobIDsForMaterial from "../Material Cards/functions/getCurrentLinkedChildJobIDsForMaterial.js";
 
 export function ChildJobDialogue({
   activeJob,
@@ -26,16 +27,11 @@ export function ChildJobDialogue({
   const { jobArray } = useContext(JobArrayContext);
   const { userJobSnapshot } = useContext(UserJobSnapshotContext);
 
-  const existingChildJobs = [
-    ...activeJob.build.childJobs[material.typeID],
-    ...(temporaryChildJobs[material.typeID]
-      ? [temporaryChildJobs[material.typeID].jobID]
-      : []),
-    ...(parentChildToEdit.childJobs[material.typeID]?.add
-      ? parentChildToEdit.childJobs[material.typeID].add
-      : []),
-  ].filter(
-    (i) => !parentChildToEdit.childJobs[material.typeID]?.remove.includes(i)
+  const existingChildJobs = getCurrentLinkedChildJobIDsForMaterial(
+    material.typeID,
+    activeJob,
+    temporaryChildJobs,
+    parentChildToEdit
   );
 
   function handleClose() {

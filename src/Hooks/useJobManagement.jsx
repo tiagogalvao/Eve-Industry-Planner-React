@@ -38,6 +38,9 @@ import retrieveJobIDsFromGroupObjects from "../Functions/Helper/getJobIDsFromGro
 import convertJobIDsToObjects from "../Functions/Helper/convertJobIDsToObjects";
 import getMissingESIData from "../Functions/Shared/getMissingESIData";
 import checkJobTypeIsBuildable from "../Functions/Helper/checkJobTypeIsBuildable";
+import getCurrentFirebaseUser from "../Functions/Firebase/currentFirebaseUser";
+import recalculateInstallCostsWithNewData from "../Functions/Installation Costs/recalculateInstallCostsWithNewData";
+import { useInstallCostsCalc } from "./GeneralHooks/useInstallCostCalc";
 
 export function useJobManagement() {
   const { jobArray, groupArray, updateJobArray } = useContext(JobArrayContext);
@@ -67,11 +70,10 @@ export function useJobManagement() {
     FirebaseListenersContext
   );
   const { buildJob } = useJobBuild();
-  const { findParentUser, sendSnackbarNotificationSuccess } =
-    useHelperFunction();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
+  const { sendSnackbarNotificationSuccess } = useHelperFunction();
 
   const analytics = getAnalytics();
-  const parentUser = findParentUser();
 
   const massBuildMaterials = async (inputJobIDs) => {
     const r = trace(performance, "MassCreateJobProcessFull");
@@ -82,15 +84,22 @@ export function useJobManagement() {
     const retrievedJobs = [];
     let jobsToSave = new Set();
     let materialsIgnored = new Set();
+    const newJobsMapByTypeID = {};
+    const inputJobsMapByID = {};
 
-    for (let inputJobID of inputJobIDs) {
-      if (inputJobID.includes("group")) continue;
+    const { jobIDs } = seperateGroupAndJobIDs(inputJobIDs);
 
+    for (let inputJobID of jobIDs) {
       let inputJob = await findOrGetJobObject(
         inputJobID,
         jobArray,
         retrievedJobs
       );
+      if (!inputJob) {
+        continue;
+      }
+
+      inputJobsMapByID[inputJob.jobID] = inputJob;
 
       inputJob.build.materials.forEach((material) => {
         if (inputJob.build.childJobs[material.typeID].length > 0) {
@@ -123,7 +132,7 @@ export function useJobManagement() {
     }
 
     logEvent(analytics, "Mass Build", {
-      UID: parentUser.accountID,
+      UID: getCurrentFirebaseUser(),
       buildCount: finalBuildCount.length,
       loggedIn: isLoggedIn,
     });
@@ -141,9 +150,10 @@ export function useJobManagement() {
 
     for (let newJob of newJobs) {
       childJobs.push(newJob);
+      newJobsMapByTypeID[newJob.itemID] = newJob;
       logEvent(analytics, "New Job", {
         loggedIn: isLoggedIn,
-        UID: parentUser.accountID,
+        UID: getCurrentFirebaseUser(),
         name: newJob.name,
         itemID: newJob.itemID,
       });
@@ -153,28 +163,18 @@ export function useJobManagement() {
       }));
     }
 
-    for (let inputJobID of inputJobIDs) {
-      let updatedJob = [...jobArray, ...retrievedJobs].find(
-        (i) => i.jobID === inputJobID
-      );
-      for (let material of updatedJob.build.materials) {
-        if (!checkJobTypeIsBuildable(material.jobType)) {
-          continue;
-        }
-        let match = childJobs.find((i) => i.itemID === material.typeID);
-        if (!match) {
-          continue;
-        }
-        updatedJob.build.childJobs[material.typeID].push(match.jobID);
-      }
+    Object.values(inputJobsMapByID).forEach((inputJob) => {
+      Object.entries(newJobsMapByTypeID).forEach(([typeID, newJob]) => {
+        inputJob.addChildJob(Number(typeID), newJob.jobID);
+      });
 
       const matchedSnapshot = newUserJobSnapshot.find(
-        (i) => i.jobID === updatedJob.jobID
+        (i) => i.jobID === inputJob.jobID
       );
-      matchedSnapshot.setSnapshot(updatedJob);
+      matchedSnapshot.setSnapshot(inputJob);
 
-      jobsToSave.add(updatedJob.jobID);
-    }
+      jobsToSave.add(inputJob.jobID);
+    });
 
     childJobs.sort((a, b) => {
       if (a.name < b.name) {
@@ -217,6 +217,13 @@ export function useJobManagement() {
     );
     const { requestedMarketData, requestedSystemIndexes } =
       await getMissingESIData(newJobs, evePrices, systemIndexData);
+
+    recalculateInstallCostsWithNewData(
+      newJobs,
+      calculateInstallCostFromJob,
+      requestedMarketData,
+      requestedSystemIndexes
+    );
 
     updateEvePrices((prev) => ({
       ...prev,
@@ -516,7 +523,7 @@ export function useJobManagement() {
     }
 
     logEvent(analytics, "Merge Jobs", {
-      UID: parentUser.accountID,
+      UID: getCurrentFirebaseUser(),
       MergeCount: buildData.length,
       SaveCount: jobsToSave.size,
       loggedIn: isLoggedIn,

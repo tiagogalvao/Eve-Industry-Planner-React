@@ -11,7 +11,6 @@ import DeselectIcon from "@mui/icons-material/Deselect";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import PostAddIcon from "@mui/icons-material/PostAdd";
 import {
-  ApplicationSettingsContext,
   DialogDataContext,
   MultiSelectJobPlannerContext,
   PriceEntryListContext,
@@ -31,16 +30,13 @@ import passBuildCostsToParentJobs from "../../../../Functions/Shared/passBuildCo
 import {
   FirebaseListenersContext,
   IsLoggedInContext,
-  UserJobSnapshot,
   UserJobSnapshotContext,
 } from "../../../../Context/AuthContext";
 import uploadJobSnapshotsToFirebase from "../../../../Functions/Firebase/uploadJobSnapshots";
 import manageListenerRequests from "../../../../Functions/Firebase/manageListenerRequests";
 import { useHelperFunction } from "../../../../Hooks/GeneralHooks/useHelperFunctions";
-import buildFullJobTree from "../../Functions/buildFullJobTree";
-import { useJobBuild } from "../../../../Hooks/useJobBuild";
-import { useRecalcuateJob } from "../../../../Hooks/GeneralHooks/useRecalculateJob";
 import { useDeleteMultipleJobs } from "../../../../Hooks/JobHooks/useDeleteMultipleJobs";
+import useBuildJobTree from "../../../../Hooks/JobHooks/useBuildNextMaterials";
 
 export function useGroupPageSideMenuFunctions(
   groupJobs,
@@ -66,16 +62,14 @@ export function useGroupPageSideMenuFunctions(
   const { updateShoppingListTrigger, updateShoppingListData } =
     useContext(ShoppingListContext);
   const { updatePriceEntryListData } = useContext(PriceEntryListContext);
-  const { applicationSettings } = useContext(ApplicationSettingsContext);
   const { toggleRightDrawerColapse } = useRightContentDrawer();
   const { closeGroup } = useCloseGroup();
   const { buildItemPriceEntry } = useJobManagement();
   const { moveItemsOnPlanner } = useMoveItemsOnPlanner();
-  const { buildJob } = useJobBuild();
   const { sendSnackbarNotificationSuccess, sendSnackbarNotificationError } =
     useHelperFunction();
-  const { recalculateJobForNewTotal } = useRecalcuateJob();
   const { deleteMultipleJobs } = useDeleteMultipleJobs();
+  const { buildNextMaterials } = useBuildJobTree();
   const navigate = useNavigate();
   const activeGroupObject = groupArray.find((i) => i.groupID === activeGroup);
 
@@ -148,36 +142,12 @@ export function useGroupPageSideMenuFunctions(
         tooltip:
           "Adds the next ingrediants of all of the jobs or just the selected jobs.",
         onClick: async () => {
-          const retrievedJobs = [];
           const jobList =
             multiSelectJobPlanner.length > 0
               ? multiSelectJobPlanner
               : [...activeGroupObject.includedJobIDs];
 
-          const newJobs = await buildFullJobTree(
-            jobList,
-            jobArray,
-            retrievedJobs,
-            activeGroup,
-            groupArray,
-            applicationSettings,
-            buildJob,
-            recalculateJobForNewTotal,
-            setSkeletonElementsToDisplay,
-            false
-          );
-
-          activeGroupObject.addJobsToGroup(newJobs);
-
-          updateJobArray((prev) => {
-            const existingIDs = new Set(prev.map(({ jobID }) => jobID));
-            return [
-              ...prev,
-              ...retrievedJobs.filter(({ jobID }) => !existingIDs.has(jobID)),
-              ...newJobs,
-            ];
-          });
-          sendSnackbarNotificationSuccess(`${newJobs.length} Jobs Added`);
+          await buildNextMaterials(jobList, setSkeletonElementsToDisplay);
         },
       },
       {
@@ -185,36 +155,11 @@ export function useGroupPageSideMenuFunctions(
         icon: <Polyline />,
         tooltip: "Adds the full item tree for all output jobs.",
         onClick: async () => {
-          const retrievedJobs = [];
           const jobList =
             multiSelectJobPlanner.length > 0
               ? multiSelectJobPlanner
               : [...activeGroupObject.includedJobIDs];
-
-          const newJobs = await buildFullJobTree(
-            jobList,
-            jobArray,
-            retrievedJobs,
-            activeGroup,
-            groupArray,
-            applicationSettings,
-            buildJob,
-            recalculateJobForNewTotal,
-            setSkeletonElementsToDisplay,
-            true
-          );
-
-          activeGroupObject.addJobsToGroup(newJobs);
-
-          updateJobArray((prev) => {
-            const existingIDs = new Set(prev.map(({ jobID }) => jobID));
-            return [
-              ...prev,
-              ...retrievedJobs.filter(({ jobID }) => !existingIDs.has(jobID)),
-              ...newJobs,
-            ];
-          });
-          sendSnackbarNotificationSuccess(`${newJobs.length} Jobs Added`);
+          await buildNextMaterials(jobList, setSkeletonElementsToDisplay, true);
         },
       },
       {

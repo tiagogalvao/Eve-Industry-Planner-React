@@ -22,6 +22,8 @@ import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
 import uploadJobSnapshotsToFirebase from "../../Functions/Firebase/uploadJobSnapshots";
 import manageListenerRequests from "../../Functions/Firebase/manageListenerRequests";
 import getMissingESIData from "../../Functions/Shared/getMissingESIData";
+import { useInstallCostsCalc } from "../GeneralHooks/useInstallCostCalc";
+import recalculateInstallCostsWithNewData from "../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
 
 function useBuildNewJobs() {
   const { userJobSnapshot, updateUserJobSnapshot } = useContext(
@@ -40,13 +42,13 @@ function useBuildNewJobs() {
   const { firebaseListeners, updateFirebaseListeners } = useContext(
     FirebaseListenersContext
   );
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const parentUser = findParentUser();
 
   async function addNewJobsToPlanner(buildRequests) {
     const firestoreTrace = trace(performance, "CreateJobProcessFull");
     let newUserJobSnapshot = [...userJobSnapshot];
     let newGroupArray = [...groupArray];
-    let priceRequestSet = new Set();
     let singleJobBuildFlag = false;
     let requiresGroupDocSave = false;
     const addNewGroup = buildRequests.some((i) => i.addNewGroup);
@@ -60,13 +62,6 @@ function useBuildNewJobs() {
     if (!Array.isArray(newJobObjects)) {
       newJobObjects = [newJobObjects];
       singleJobBuildFlag = true;
-    }
-
-    for (let jobObject of newJobObjects) {
-      priceRequestSet = new Set([
-        ...priceRequestSet,
-        ...jobObject.getMaterialIDs(),
-      ]);
     }
 
     if (addNewGroup) {
@@ -124,6 +119,13 @@ function useBuildNewJobs() {
 
     const { requestedMarketData, requestedSystemIndexes } =
       await getMissingESIData(newJobObjects, evePrices, systemIndexData);
+
+    recalculateInstallCostsWithNewData(
+      newJobObjects,
+      calculateInstallCostFromJob,
+      requestedMarketData,
+      requestedSystemIndexes
+    );
 
     if (requiresGroupDocSave) {
       updateGroupArray(newGroupArray);

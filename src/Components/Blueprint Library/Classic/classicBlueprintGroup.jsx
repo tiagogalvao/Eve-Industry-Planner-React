@@ -27,6 +27,8 @@ import JobSnapshot from "../../../Classes/jobSnapshotConstructor";
 import addNewJobToFirebase from "../../../Functions/Firebase/addNewJob";
 import uploadJobSnapshotsToFirebase from "../../../Functions/Firebase/uploadJobSnapshots";
 import getMissingESIData from "../../../Functions/Shared/getMissingESIData";
+import recalculateInstallCostsWithNewData from "../../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
+import { useInstallCostsCalc } from "../../../Hooks/GeneralHooks/useInstallCostCalc";
 
 export function ClassicBlueprintGroup({ bpID, blueprintResults }) {
   const { apiJobs } = useContext(ApiJobsContext);
@@ -42,6 +44,7 @@ export function ClassicBlueprintGroup({ bpID, blueprintResults }) {
   const { buildJob, checkAllowBuild } = useJobBuild();
   const { findParentUser, sendSnackbarNotificationSuccess } =
     useHelperFunction();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const analytics = getAnalytics();
   const t = trace(performance, "CreateJobProcessFull");
 
@@ -121,6 +124,12 @@ export function ClassicBlueprintGroup({ bpID, blueprintResults }) {
                         evePrices,
                         systemIndexData
                       );
+                    recalculateInstallCostsWithNewData(
+                      newJob,
+                      calculateInstallCostFromJob,
+                      requestedMarketData,
+                      requestedSystemIndexes
+                    );
 
                     updateEvePrices((prev) => ({
                       ...prev,

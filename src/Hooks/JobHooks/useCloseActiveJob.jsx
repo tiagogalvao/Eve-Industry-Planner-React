@@ -14,8 +14,9 @@ import JobSnapshot from "../../Classes/jobSnapshotConstructor";
 import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
 import updateJobInFirebase from "../../Functions/Firebase/updateJob";
 import uploadJobSnapshotsToFirebase from "../../Functions/Firebase/uploadJobSnapshots";
-import findOrGetJobObject from "../../Functions/Helper/findJobObject";
 import manageListenerRequests from "../../Functions/Firebase/manageListenerRequests";
+import applyParentChildChanges from "../../Components/Edit Job/functions/applyParentChildChanges";
+import repairMissingParentChildRelationships from "../../Functions/Shared/repairParentChildRelationships";
 
 export function useCloseActiveJob() {
   const { updateActiveJob } = useContext(ActiveJobContext);
@@ -50,31 +51,14 @@ export function useCloseActiveJob() {
       return;
     }
 
-    let newJobArray = [...jobArray];
-    const retrievedJobs = [];
-    let newGroupArray = [...groupArray];
+    const retrievedJobs = Object.values(tempJobsToAdd);
+    const IDsOfNewJobs = new Set(
+      Object.values(tempJobsToAdd).map(({ jobID }) => jobID)
+    );
     let newUserJobSnapshot = [...userJobSnapshot];
     const newLinkedJobIDs = new Set(linkedJobIDs);
     const newLinkedOrderIDs = new Set(linkedOrderIDs);
     const newLinkedTransIDs = new Set(linkedTransIDs);
-    const index = newJobArray.findIndex((x) => inputJob.jobID === x.jobID);
-    newJobArray[index] = inputJob;
-
-    Object.values(tempJobsToAdd).forEach((tempJob) => {
-      inputJob.addChildJob(tempJob.itemID, tempJob.jobID);
-      newJobArray.push(tempJob);
-      if (!inputJob.groupID) {
-        newUserJobSnapshot.push(new JobSnapshot(tempJob));
-      } else {
-        const matchedGroup = newGroupArray.find(
-          (i) => i.groupID === tempJob.groupID
-        );
-        matchedGroup.addJobsToGroup(tempJob);
-      }
-      if (isLoggedIn) {
-        addNewJobToFirebase(tempJob);
-      }
-    });
 
     addIDsToSet(newLinkedJobIDs, esiDataToLink.industryJobs.add);
     addIDsToSet(newLinkedOrderIDs, esiDataToLink.marketOrders.add);
@@ -83,122 +67,51 @@ export function useCloseActiveJob() {
     removeIDsFromSet(newLinkedOrderIDs, esiDataToLink.marketOrders.remove);
     removeIDsFromSet(newLinkedTransIDs, esiDataToLink.transactions.remove);
 
-    const matchedSnapshot = newUserJobSnapshot.find(
-      (i) => i.jobID === inputJob.jobID
+    const modifiedLinkedJobIDs = await applyParentChildChanges(
+      parentChildToEdit,
+      inputJob,
+      jobArray,
+      retrievedJobs
+    );
+    const repairedJobIDs = await repairMissingParentChildRelationships(
+      inputJob,
+      jobArray,
+      retrievedJobs
     );
 
-    if (matchedSnapshot) {
-      matchedSnapshot.setSnapshot(inputJob);
-    }
+    const finalModifiedIDSet = new Set(
+      [...modifiedLinkedJobIDs, ...repairedJobIDs].filter(
+        (id) => !IDsOfNewJobs.has(id)
+      )
+    );
 
-    let parentIDsToRemove = new Set();
-    const modifiedJobsSet = new Set();
-
-    for (const idToRemove of parentChildToEdit.parentJobs.remove) {
-      let matchingJob = newJobArray.find((i) => i.jobID === idToRemove);
-      if (!matchingJob) continue;
-      matchingJob.removeChildJob(inputJob.itemID, inputJob.jobID);
-      modifiedJobsSet.add(matchingJob.jobID);
-    }
-    inputJob.removeParentJob(parentChildToEdit.parentJobs.remove);
-
-    for (let idToAdd of parentChildToEdit.parentJobs.add) {
-      let matchingJob = newJobArray.find((i) => i.jobID === idToAdd);
-      if (!matchingJob) continue;
-      matchingJob.addChildJob(inputJob.itemID, inputJob.jobID);
-      modifiedJobsSet.add(matchingJob.jobID);
-    }
-    inputJob.addParentJob(parentChildToEdit.parentJobs.add);
-
-    for (let material of inputJob.build.materials) {
-      let childJobsToRemove = new Set();
-      if (!parentChildToEdit.childJobs[material.typeID]) continue;
-
-      for (const idToAdd of parentChildToEdit.childJobs[material.typeID].add) {
-        const matchedJob = newJobArray.find((i) => i.jobID === idToAdd);
-        if (!matchedJob) continue;
-        matchedJob.addParentJob(inputJob.jobID);
-        inputJob.addChildJob(material.typeID, idToAdd);
-        modifiedJobsSet.add(matchedJob.jobID);
-      }
-
-      for (const idToRemove of parentChildToEdit.childJobs[material.typeID]
-        .remove) {
-        let matchedJob = newJobArray.find((i) => i.jobID === idToRemove);
-        if (!matchedJob) continue;
-        matchedJob.removeParentJob(inputJob.jobID);
-        inputJob.removeChildJob(material.typeID, inputJob.jobID);
-        modifiedJobsSet.add(matchedJob.jobID);
-      }
-
-      for (let parentID of inputJob.parentJob) {
-        let parentJob = await findOrGetJobObject(
-          parentID,
-          newJobArray,
-          retrievedJobs
-        );
-
-        if (!parentJob) continue;
-
-        let parentMaterial = parentJob.build.materials.find(
-          (mat) => mat.typeID === inputJob.itemID
-        );
-
-        if (!parentMaterial) continue;
-
-        if (parentMaterial.typeID !== inputJob.itemID) {
-          parentIDsToRemove.add(parentID);
-          modifiedJobsSet.add(parentJob.jobID);
-          continue;
-        }
-
-        if (
-          !parentJob.build.childJobs[parentMaterial.typeID].includes(
-            inputJob.jobID
-          )
-        ) {
-          parentJob.addChildJob(parentMaterial.typeID, inputJob.jobID);
-          modifiedJobsSet.add(parentJob.jobID);
-        }
-      }
-
-      inputJob.removeParentJob(parentIDsToRemove);
-
-      for (let childJobID of inputJob.build.childJobs[material.typeID]) {
-        let childJob = await findOrGetJobObject(
-          childJobID,
-          newJobArray,
-          retrievedJobs
-        );
-        if (!childJob) continue;
-
-        if (childJob.itemID !== material.typeID) {
-          childJobsToRemove.add(childJobID);
-          modifiedJobsSet.add(childJob.jobID);
-          continue;
-        }
-
-        if (!childJob.parentJob.includes(inputJob.jobID)) {
-          childJob.addParentJob(inputJob.jobID);
-          modifiedJobsSet.add(childJob.jobID);
-        }
-      }
-      inputJob.removeChildJob(material.typeID, childJobsToRemove);
-    }
-
-    for (let modifiedID of [...modifiedJobsSet]) {
-      const matchedJob = newJobArray.find((i) => i.jobID === modifiedID);
+    for (let modifiedID of finalModifiedIDSet) {
+      const matchedJob = jobArray.find((i) => i.jobID === modifiedID);
       if (!matchedJob) return;
 
       const matchedSnapshot = newUserJobSnapshot.find(
         (i) => i.jobID === matchedJob.jobID
       );
 
-      matchedSnapshot.setSnapshot(matchedJob);
+      if (matchedSnapshot) {
+        matchedSnapshot.setSnapshot(matchedJob);
+      }
 
       if (isLoggedIn) {
-        console.log("here")
         await updateJobInFirebase(matchedJob);
+      }
+    }
+
+    if (!inputJob.groupID) {
+      for (let newJob of Object.values(tempJobsToAdd)) {
+        newUserJobSnapshot.push(new JobSnapshot(newJob));
+      }
+    } else {
+      const matchedGroup = groupArray.find(
+        (i) => i.groupID === inputJob.groupID
+      );
+      if (matchedGroup) {
+        matchedGroup.addJobsToGroup(Object.values(tempJobsToAdd));
       }
     }
 
@@ -208,10 +121,18 @@ export function useCloseActiveJob() {
       !newUserJobSnapshot.some((i) => i.jobID === inputJob.jobID)
     ) {
       newUserJobSnapshot.push(new JobSnapshot(inputJob));
+    } else {
+      const matchedSnapshot = newUserJobSnapshot.find(
+        (i) => i.jobID === inputJob.jobID
+      );
+
+      if (matchedSnapshot) {
+        matchedSnapshot.setSnapshot(inputJob);
+      }
     }
 
     manageListenerRequests(
-      [...retrievedJobs, ...Object.values(tempJobsToAdd)],
+      retrievedJobs,
       updateJobArray,
       updateFirebaseListeners,
       firebaseListeners,
@@ -219,18 +140,30 @@ export function useCloseActiveJob() {
     );
 
     if (inputJob.groupID) {
-      updateGroupArray(newGroupArray);
+      updateGroupArray((prev) => [...prev]);
     }
 
     updateLinkedJobIDs([...newLinkedJobIDs]);
     updateLinkedOrderIDs([...newLinkedOrderIDs]);
     updateLinkedTransIDs([...newLinkedTransIDs]);
-    updateJobArray(() => [...newJobArray, ...retrievedJobs]);
+    updateJobArray((prev) => {
+      const existingIDs = new Set(prev.map(({ jobID }) => jobID));
+      const updatedJobs = prev.map((job) =>
+        job.jobID === inputJob.jobID ? inputJob : job
+      );
+      return [
+        ...updatedJobs,
+        ...retrievedJobs.filter(({ jobID }) => !existingIDs.has(jobID)),
+      ];
+    });
     updateUserJobSnapshot(newUserJobSnapshot);
     updateActiveJob(null);
     if (isLoggedIn) {
       await uploadJobSnapshotsToFirebase(newUserJobSnapshot);
       await updateJobInFirebase(inputJob);
+      for (let newJob of Object.values(tempJobsToAdd)) {
+        await addNewJobToFirebase(newJob);
+      }
     }
 
     sendSnackbarNotificationInfo(`${inputJob.name} Updated`);

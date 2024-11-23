@@ -13,7 +13,10 @@ import { Footer } from "../Footer/Footer";
 import CollapseableContentDrawer_Right from "../SideMenu/rightContentDrawer";
 import RightSideMenuContent_GroupPage from "./Side Menu/rightSideMenuContent";
 import GroupAccordionFrame from "./Accordion/AccordionFrame";
-import { EvePricesContext } from "../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../Context/EveDataContext";
 import {
   FirebaseListenersContext,
   IsLoggedInContext,
@@ -24,12 +27,17 @@ import { MultiSelectJobPlannerContext } from "../../Context/LayoutContext";
 import { useGroupPageSideMenuFunctions } from "./Side Menu/Buttons/buttonFunctions";
 import getMissingJobObjects from "../../Functions/Helper/getMissingJobObjects";
 import { PriceEntryDialog } from "../Dialogues/Price Entry/PriceEntryList";
-import getMarketData from "../../Functions/MarketData/findMarketData";
+import convertJobIDsToObjects from "../../Functions/Helper/convertJobIDsToObjects";
+import { useInstallCostsCalc } from "../../Hooks/GeneralHooks/useInstallCostCalc";
+import recalculateInstallCostsWithNewData from "../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
+import getMissingESIData from "../../Functions/Shared/getMissingESIData";
 
 function GroupPageFrame({ colorMode }) {
   const { activeGroup, updateActiveGroup } = useContext(ActiveJobContext);
   const { jobArray, updateJobArray, groupArray } = useContext(JobArrayContext);
   const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { firebaseListeners, updateFirebaseListeners } = useContext(
     FirebaseListenersContext
   );
@@ -43,6 +51,7 @@ function GroupPageFrame({ colorMode }) {
     useState(null);
   const [skeletonElementsToDisplay, setSkeletonElementsToDisplay] = useState(0);
   const [highlightedItems, updateHighlightedItem] = useState(new Set());
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const { groupID } = useParams();
 
   const navigate = useNavigate();
@@ -65,21 +74,34 @@ function GroupPageFrame({ colorMode }) {
           throw new Error("Unable to find requested group");
         }
 
-        const itemPriceRequest = getMarketData(
-          activeGroupObject.materialIDs,
-          evePrices
-        );
-
         const retrievedJobs = await getMissingJobObjects(
           activeGroupObject.includedJobIDs,
           jobArray
         );
 
-        const itemPriceResult = await itemPriceRequest;
+        const allJobObjects = await convertJobIDsToObjects(
+          activeGroupObject.includedJobIDs,
+          jobArray,
+          retrievedJobs
+        );
+
+        const { requestedMarketData, requestedSystemIndexes } =
+          await getMissingESIData(allJobObjects, evePrices, systemIndexData);
+
+        recalculateInstallCostsWithNewData(
+          allJobObjects,
+          calculateInstallCostFromJob,
+          requestedMarketData,
+          requestedSystemIndexes
+        );
 
         updateEvePrices((prev) => ({
           ...prev,
-          ...itemPriceResult,
+          ...requestedMarketData,
+        }));
+        updateSystemIndexData((prev) => ({
+          ...prev,
+          ...requestedSystemIndexes,
         }));
         updateActiveGroup(activeGroupObject.groupID);
         updateMultiSelectJobPlanner([]);

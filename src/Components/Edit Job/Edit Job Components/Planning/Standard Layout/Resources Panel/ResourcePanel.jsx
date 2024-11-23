@@ -21,6 +21,9 @@ import {
 import { useHelperFunction } from "../../../../../../Hooks/GeneralHooks/useHelperFunctions";
 import Job from "../../../../../../Classes/jobConstructor";
 import getMissingESIData from "../../../../../../Functions/Shared/getMissingESIData";
+import { useInstallCostsCalc } from "../../../../../../Hooks/GeneralHooks/useInstallCostCalc";
+import recalculateInstallCostsWithNewData from "../../../../../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
+import checkJobTypeIsBuildable from "../../../../../../Functions/Helper/checkJobTypeIsBuildable";
 
 export function RawResourceList({
   activeJob,
@@ -40,6 +43,7 @@ export function RawResourceList({
   );
   const { findMaterialJobIDInGroup } = useManageGroupJobs();
   const { buildJob } = useJobBuild();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const { writeTextToClipboard } = useHelperFunction();
 
   if (!activeJob.build.setup[activeJob.layout.setupToEdit]) return null;
@@ -191,8 +195,7 @@ export function RawResourceList({
     const newTempChildJobs = { ...temporaryChildJobs };
 
     activeJob.build.materials.forEach(({ jobType, typeID, quantity }) => {
-      if (jobType !== jobTypes.manufacturing && jobTypes !== jobTypes.reaction)
-        return;
+      if (!checkJobTypeIsBuildable(jobType)) return;
       const childJobLocation = activeJob.build.childJobs[typeID];
       const tempChildJob = temporaryChildJobs[typeID];
       if (groupJobCheck(typeID, activeJob.groupID, groupJobsToLink)) return;
@@ -219,37 +222,47 @@ export function RawResourceList({
         return true;
       }
     });
-    if (buildRequestArray.length === 0) return;
+    console.log(buildRequestArray);
+    // if (buildRequestArray.length === 0) return;
     const newJobs = await buildJob(buildRequestArray);
 
-    activeJob.build.materials.forEach(({ jobType, typeID }) => {
-      if (jobType !== jobTypes.manufacturing && jobTypes !== jobTypes.reaction)
-        return;
-
-      if (groupJobsToLink.get(typeID)) {
-        if (newParentJobsToEdit_ChildJobs[typeID]) {
-          newParentJobsToEdit_ChildJobs[typeID].add.push(
-            groupJobsToLink.get(typeID)
-          );
-        } else {
-          newParentJobsToEdit_ChildJobs[typeID] = {
-            add: [groupJobsToLink.get(typeID)],
-            remove: [],
-          };
-        }
-        return;
+    for (let newJob of newJobs) {
+      const childLocation = newParentJobsToEdit_ChildJobs[newJob.itemID];
+      if (!childLocation) {
+        newParentJobsToEdit_ChildJobs[newJob.itemID] = {
+          add: [newJob.jobID],
+          remove: [],
+        };
+      } else {
+        childLocation.add.push(newJob.jobID);
       }
+      newTempChildJobs[newJob.itemID] = newJob;
+    }
 
-      const matchedJob = newJobs.find((i) => i.itemID === typeID);
+    groupJobsToLink.entries().forEach(([typeID, jobID]) => {
+      const childLocation = newParentJobsToEdit_ChildJobs[typeID];
 
-      if (!matchedJob) return;
-
-      newTempChildJobs[typeID] = matchedJob;
+      if (!childLocation) {
+        newParentJobsToEdit_ChildJobs[typeID] = {
+          add: [jobID],
+          remove: [],
+        };
+      } else {
+        childLocation.add.push(...jobIDArray);
+      }
     });
 
     const { requestedMarketData, requestedSystemIndexes } =
       await getMissingESIData(newJobs, evePrices, systemIndexData);
 
+    recalculateInstallCostsWithNewData(
+      newJobs,
+      calculateInstallCostFromJob,
+      requestedMarketData,
+      requestedSystemIndexes
+    );
+
+    console.log(newTempChildJobs);
     updateTemporaryChildJobs(newTempChildJobs);
     updateParentChildToEdit((prev) => ({
       ...prev,

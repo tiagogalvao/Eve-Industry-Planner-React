@@ -2,10 +2,14 @@ import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
 import itemList from "../../../../../RawData/searchIndex.json";
 import { useJobBuild } from "../../../../../Hooks/useJobBuild";
 import { useContext, useEffect } from "react";
-import { EvePricesContext, SystemIndexContext } from "../../../../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../../../../Context/EveDataContext";
 import { UserWatchlistContext } from "../../../../../Context/AuthContext";
 import getMissingESIData from "../../../../../Functions/Shared/getMissingESIData";
 import checkJobTypeIsBuildable from "../../../../../Functions/Helper/checkJobTypeIsBuildable";
+import { useInstallCostsCalc } from "../../../../../Hooks/GeneralHooks/useInstallCostCalc";
 
 export function ImportNewJob_WatchlistDialog({
   setFailedImport,
@@ -19,8 +23,10 @@ export function ImportNewJob_WatchlistDialog({
 }) {
   const { userWatchlist } = useContext(UserWatchlistContext);
   const { evePrices, updateEvePrices } = useContext(EvePricesContext);
-  const { systemIndexData, updateSystemIndexData } = useContext(SystemIndexContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { buildJob } = useJobBuild();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
 
   useEffect(() => {
     async function findJobToEdit() {
@@ -52,9 +58,7 @@ export function ImportNewJob_WatchlistDialog({
     materialMap[WatchlistItemJob.itemID] = WatchlistItemJob;
     const materialJobRequests = WatchlistItemJob.build.materials.reduce(
       (prev, material) => {
-        if (
-          checkJobTypeIsBuildable(material.jobType)
-        ) {
+        if (checkJobTypeIsBuildable(material.jobType)) {
           prev.push({ itemID: material.typeID });
         }
         return prev;
@@ -68,15 +72,24 @@ export function ImportNewJob_WatchlistDialog({
       materialMap[job.itemID] = job;
     }
 
-    const {requestedMarketData, requestedSystemIndexes} = await getMissingESIData([...MaterialJobs, WatchlistItemJob])
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData([...MaterialJobs, WatchlistItemJob]);
+
+    recalculateInstallCostsWithNewData(
+      MaterialJobs,
+      calculateInstallCostFromJob,
+      requestedMarketData,
+      requestedSystemIndexes
+    );
+
     updateEvePrices((prev) => ({
       ...prev,
       ...requestedMarketData,
     }));
     updateSystemIndexData((prev) => ({
       ...prev,
-      ...requestedSystemIndexes
-    }))
+      ...requestedSystemIndexes,
+    }));
     updateWatchlistItemRequest(WatchlistItemJob.itemID);
     setMaterialJobs(materialMap);
     updateSaveReady(true);

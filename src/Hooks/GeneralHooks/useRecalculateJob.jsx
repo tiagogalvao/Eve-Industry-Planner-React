@@ -58,8 +58,6 @@ export function useRecalcuateJob() {
 
       inputJob.build.setup[newSetup.id] = newSetup;
 
-      console.log(newSetup)
-
       if (!index) {
         inputJob.layout.setupToEdit = newSetup.id;
       }

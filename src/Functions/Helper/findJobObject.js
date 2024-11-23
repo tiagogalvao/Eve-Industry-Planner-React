@@ -1,4 +1,5 @@
 import getJobDocumentFromFirebase from "../Firebase/getJobDocument";
+import isUserLoggedIn from "../Firebase/isUserLoggedIn";
 
 async function findOrGetJobObject(
   requestedJobID,
@@ -16,7 +17,7 @@ async function findOrGetJobObject(
 
     if (matchedJob) {
       return matchedJob;
-    } else {
+    } else if (isUserLoggedIn()) {
       const retrievedJob = await getJobDocumentFromFirebase(requestedJobID);
 
       if (!retrievedJob) {
@@ -26,7 +27,7 @@ async function findOrGetJobObject(
       alternativeJobStore.push(retrievedJob);
 
       return retrievedJob;
-    }
+    } else return null;
   } catch (err) {
     console.error("Error finding job object:", err);
     return null;

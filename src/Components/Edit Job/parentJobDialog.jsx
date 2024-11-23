@@ -25,8 +25,7 @@ export function ParentJobDialog({
   const { jobArray } = useContext(JobArrayContext);
   const { userJobSnapshot } = useContext(UserJobSnapshotContext);
   const [matches, updateMatches] = useState([]);
-  const { Add_RemovePendingParentJobs, sendSnackbarNotificationSuccess } =
-    useHelperFunction();
+  const { sendSnackbarNotificationSuccess } = useHelperFunction();
 
   const handleClose = () => {
     updateDialogTrigger(false);
@@ -38,24 +37,24 @@ export function ParentJobDialog({
     }
     let newMatches = [];
     if (!activeJob.groupID) {
-      for (let job of userJobSnapshot) {
-        if (
-          job.materialIDs.has(activeJob.itemID) &&
-          !activeJob.parentJob.includes(job.jobID) &&
-          !parentChildToEdit.parentJobs.add.includes(job.jobID)
-        ) {
-          newMatches.push(job);
-        }
-      }
-    } else {
-      let matchs = jobArray.filter(
-        (i) =>
-          i.groupID === activeJob.groupID &&
-          !activeJob.parentJob.includes(i.jobID) &&
-          i.build.materials.some((x) => x.typeID === activeJob.itemID) &&
-          !parentChildToEdit.parentJobs.add.includes(i.jobID)
+      newMatches = userJobSnapshot.filter(
+        (job) =>
+          (job.materialIDs.has(activeJob.itemID) &&
+            !activeJob.parentJob.includes(job.jobID) &&
+            !parentChildToEdit.parentJobs.add.includes(job.jobID)) ||
+          parentChildToEdit.parentJobs.remove.includes(job.jobID)
       );
-      newMatches = newMatches.concat(matchs);
+    } else {
+      newMatches = jobArray.filter(
+        (job) =>
+          (job.groupID === activeJob.groupID &&
+            !activeJob.parentJob.includes(job.jobID) &&
+            job.build.materials.some(
+              (material) => material.typeID === activeJob.itemID
+            ) &&
+            !parentChildToEdit.parentJobs.add.includes(job.jobID)) ||
+          parentChildToEdit.parentJobs.remove.includes(job.jobID)
+      );
     }
     updateMatches(newMatches);
   }, [dialogTrigger]);
@@ -113,22 +112,19 @@ export function ParentJobDialog({
                       size="small"
                       color="primary"
                       onClick={() => {
-                        const { newParentJobsToAdd, newParentJobsToRemove } =
-                          Add_RemovePendingParentJobs(
-                            parentChildToEdit.parentJobs,
-                            job.jobID,
-                            true
-                          );
-
-                        console.log(newParentJobsToAdd);
-                        console.log(newParentJobsToRemove);
-
                         updateParentChildToEdit((prev) => ({
                           ...prev,
                           parentJobs: {
                             ...prev.parentJobs,
-                            add: [...newParentJobsToAdd],
-                            remove: [...newParentJobsToRemove],
+                            add: [
+                              ...new Set([
+                                ...(prev.parentJobs.add || []),
+                                job.jobID,
+                              ]),
+                            ],
+                            remove: (prev.parentJobs.remove || []).filter(
+                              (id) => id !== job.jobID
+                            ),
                           },
                         }));
                         setJobModified(true);

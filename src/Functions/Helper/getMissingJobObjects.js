@@ -1,9 +1,14 @@
 import getJobDocumentFromFirebase from "../Firebase/getJobDocument";
+import isUserLoggedIn from "../Firebase/isUserLoggedIn";
 
 async function getMissingJobObjects(requestedJobIDs, jobArray) {
   try {
     if (!requestedJobIDs || !jobArray) {
       throw new Error("Missing requested input or job array");
+    }
+
+    if (!isUserLoggedIn()) {
+      return [];
     }
 
     const jobIDs = [];

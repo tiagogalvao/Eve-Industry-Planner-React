@@ -30,8 +30,7 @@ export function LinkedJobBadge({
   const { userJobSnapshot } = useContext(UserJobSnapshotContext);
   const [dialogTrigger, updateDialogTrigger] = useState(false);
   const { closeActiveJob } = useCloseActiveJob();
-  const { Add_RemovePendingParentJobs, sendSnackbarNotificationError } =
-    useHelperFunction();
+  const { sendSnackbarNotificationError } = useHelperFunction();
 
   const navigate = useNavigate();
 
@@ -128,18 +127,16 @@ export function LinkedJobBadge({
                     boxShadow: 3,
                   }}
                   onDelete={() => {
-                    const { newParentJobsToAdd, newParentJobsToRemove } =
-                      Add_RemovePendingParentJobs(
-                        parentChildToEdit.parentJobs,
-                        jobID,
-                        false
-                      );
                     updateParentChildToEdit((prev) => ({
                       ...prev,
                       parentJobs: {
                         ...prev.parentJobs,
-                        add: newParentJobsToAdd,
-                        remove: newParentJobsToRemove,
+                        add: (prev.parentJobs.add || []).filter(
+                          (id) => id !== jobID
+                        ),
+                        remove: Array.from(
+                          new Set([...(prev.parentJobs.remove || []), jobID])
+                        ),
                       },
                     }));
                     sendSnackbarNotificationError(`${parent.name} Unlinked`);

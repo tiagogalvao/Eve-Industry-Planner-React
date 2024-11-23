@@ -60,8 +60,6 @@ export function useInstallCostsCalc() {
 
     const cloneValue = findCloneValue(inputSetup.selectedCharacter);
 
-    console.table(estimatedItemValue,facilityModifier,facilityTax,systemIndexValue)
-
     const taxModifierTotal =
       estimatedItemValue *
       (systemIndexValue * facilityModifier +
@@ -80,8 +78,6 @@ export function useInstallCostsCalc() {
     const jobGrossCost = systemIndexDeduction - facilityBonusDeduction;
 
     const installCost = jobGrossCost + taxModifierTotal;
-
-    console.log(installCost)
 
     function findSystemIndex(
       requiredSystemID,

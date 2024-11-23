@@ -10,6 +10,7 @@ import {
 import { useRecalcuateJob } from "../GeneralHooks/useRecalculateJob";
 import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
 import getMissingESIData from "../../Functions/Shared/getMissingESIData";
+import recalculateInstallCostsWithNewData from "../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
 
 export function useImportFitFromClipboard() {
   const { activeGroup } = useContext(ActiveJobContext);
@@ -170,6 +171,13 @@ export function useImportFitFromClipboard() {
 
     const { requestedMarketData, requestedSystemIndexes } =
       await getMissingESIData(newJobs, evePrices, systemIndexData);
+    
+      recalculateInstallCostsWithNewData(
+        newJobs,
+        calculateInstallCostFromJob,
+        requestedMarketData,
+        requestedSystemIndexes
+      );
 
     updateGroupArray(newGroupArray);
     updateJobArray(newJobArray);

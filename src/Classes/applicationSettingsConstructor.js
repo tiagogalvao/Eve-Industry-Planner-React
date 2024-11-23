@@ -1,7 +1,6 @@
 import { jobTypes } from "../Context/defaultValues";
 import GLOBAL_CONFIG from "../global-config-app";
 
-
 const { DEFAULT_MARKET_OPTION, DEFAULT_ORDER_OPTION, DEFAULT_ASSET_LOCATION } =
   GLOBAL_CONFIG;
 
@@ -53,6 +52,8 @@ class ApplicationSettingsObject {
     this.reactionStructures =
       settings?.structures?.reaction || settings?.reactionStructures || [];
     this.exemptTypeIDs = new Set(settings?.exemptTypeIDs || []);
+    this.automaticJobRecalculation =
+      settings?.automaticJobRecalculation || false;
   }
 
   toDocument() {

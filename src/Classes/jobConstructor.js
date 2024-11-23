@@ -289,18 +289,17 @@ class Job {
   }
 
   addChildJob(materialTypeID, childIDToAdd) {
-    if (!materialTypeID || !childIDToAdd) {
+    if (
+      !materialTypeID ||
+      !childIDToAdd ||
+      !this.build.childJobs[materialTypeID]
+    ) {
       console.error(
         `Missing input data: materialTypeID=${materialTypeID}, childIDToAdd=${childIDToAdd}`
       );
       return;
     }
     const childLocation = this.build.childJobs[materialTypeID];
-
-    if (!childLocation) {
-      console.error(`Material not present: materialTypeID=${materialTypeID}`);
-      return;
-    }
 
     const childrenToAdd =
       Array.isArray(childIDToAdd) || childIDToAdd instanceof Set
@@ -323,6 +322,8 @@ class Job {
         ? [...parentJobID]
         : [parentJobID];
 
+    if (parentsToAdd.length === 0) return;
+
     this.parentJob = [...new Set([...this.parentJob, ...parentsToAdd])];
   }
 
@@ -336,6 +337,8 @@ class Job {
       Array.isArray(parentJobID) || parentJobID instanceof Set
         ? [...parentJobID]
         : [parentJobID];
+
+    if (parentsToRemove.length === 0) return;
 
     this.parentJob = this.parentJob.filter(
       (id) => !parentsToRemove.includes(id)

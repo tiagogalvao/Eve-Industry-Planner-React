@@ -62,8 +62,8 @@ export function useFirebase() {
     buildLocalAccountData,
     checkUserClaims,
     getLocationNames,
-    getSystemIndexData,
-    storeESIData,
+    getSystemIndexDataFromUserStructures,
+    storeESIData, 
     tidyLinkedData,
     updateCloudRefreshTokens,
     updateLocalRefreshTokens,
@@ -376,7 +376,8 @@ export function useFirebase() {
               mainUser,
               esiOjectArray
             );
-            const systemIndexResults = await getSystemIndexData(mainUser);
+            const systemIndexResults =
+              await getSystemIndexDataFromUserStructures(mainUser);
 
             const applicationSettings = new ApplicationSettingsObject(
               mainUser.settings

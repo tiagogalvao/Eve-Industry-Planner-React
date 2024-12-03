@@ -1,7 +1,6 @@
 import { useContext, useState } from "react";
 import useRightContentDrawer from "../../Hooks/rightContentMenuHooks";
 import {
-  Autocomplete,
   Avatar,
   Box,
   Button,
@@ -10,23 +9,23 @@ import {
   Grid,
   Paper,
   Switch,
-  TextField,
   Typography,
   useMediaQuery,
 } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
-import itemList from "../../../../RawData/searchIndex.json";
 import fullItemList from "../../../../RawData/fullItemList.json";
 import uuid from "react-uuid";
 import AddShipFittingPanel from "./addFittingJobs";
 import { ActiveJobContext } from "../../../../Context/JobContext";
 import useBuildNewJobs from "../../../../Hooks/JobHooks/useBuildNewJobs";
+import VirtualisedRecipeSearch from "../../../../Styled Components/autocomplete/singleSelectScrollable";
 
 function AddNewJobSharedContentPanel({
   hideContentPanel,
   contentID,
   updateContentID,
   setSkeletonElementsToDisplay,
+  pageRequiresDrawerToBeOpen,
 }) {
   const { activeGroup } = useContext(ActiveJobContext);
   const [itemIDsToAdd, updateItemIDsToAdd] = useState([]);
@@ -42,22 +41,27 @@ function AddNewJobSharedContentPanel({
     setSkeletonElementsToDisplay(addNewGroupOnBuild ? 1 : itemIDsToAdd.length);
     await addNewJobsToPlanner(itemIDsToAdd);
     updateItemIDsToAdd([]);
-    toggleRightDrawerColapse(1, contentID, hideContentPanel);
+    toggleRightDrawerColapse(
+      1,
+      contentID,
+      hideContentPanel,
+      pageRequiresDrawerToBeOpen
+    );
     updateContentID(null);
     setSkeletonElementsToDisplay(0);
   }
 
-  function addItemToSelection(inputID) {
-    if (!inputID) return;
+  function addItemToSelection({ itemID }) {
+    if (!itemID) return;
     const newItemsToAdd = itemIDsToAdd.map((item) => ({ ...item }));
 
-    const existingObject = newItemsToAdd.find((i) => i.itemID === inputID);
+    const existingObject = newItemsToAdd.find((i) => i.itemID === itemID);
 
     if (existingObject) {
       existingObject.itemQty++;
     } else {
       newItemsToAdd.push({
-        itemID: inputID,
+        itemID: itemID,
         itemQty: 1,
         addNewGroup: addNewGroupOnBuild,
         groupID: activeGroup,
@@ -107,28 +111,7 @@ function AddNewJobSharedContentPanel({
                   paddingBottom: 2,
                 }}
               >
-                <Autocomplete
-                  fullWidth
-                  id="Recipe Search"
-                  blurOnSelect
-                  clearOnBlur
-                  size="small"
-                  options={itemList}
-                  getOptionLabel={(option) => option.name}
-                  onChange={(event, value) => {
-                    if (!value) return;
-                    addItemToSelection(value.itemID);
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      size="small"
-                      margin="none"
-                      variant="standard"
-                      InputProps={{ ...params.InputProps, type: "search" }}
-                    />
-                  )}
-                />
+                <VirtualisedRecipeSearch onSelect={addItemToSelection} />
               </Grid>
               <Grid
                 item
@@ -191,10 +174,15 @@ function AddNewJobSharedContentPanel({
                       variant="outlined"
                       sx={{
                         margin: 0.5,
+                        boxShadow: 3,
                         "& .MuiChip-deleteIcon": {
                           color: "error.main",
                         },
-                        boxShadow: 3,
+                        "&:hover": {
+                          "& .MuiChip-label": {
+                            color: "primary.main",
+                          },
+                        },
                       }}
                     />
                   </Grid>

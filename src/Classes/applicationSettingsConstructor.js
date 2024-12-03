@@ -54,6 +54,8 @@ class ApplicationSettingsObject {
     this.exemptTypeIDs = new Set(settings?.exemptTypeIDs || []);
     this.automaticJobRecalculation =
       settings?.automaticJobRecalculation || false;
+    this.ignoreItemsWithoutBlueprits =
+      settings?.ignoreItemsWithoutBlueprits || false;
   }
 
   toDocument() {
@@ -81,6 +83,8 @@ class ApplicationSettingsObject {
         reaction: this.reactionStructures,
       },
       exemptTypeIDs: [...this.exemptTypeIDs],
+      automaticJobRecalculation: this.automaticJobRecalculation,
+      ignoreItemsWithoutBlueprits: this.ignoreItemsWithoutBlueprits,
     };
   }
 
@@ -289,6 +293,29 @@ class ApplicationSettingsObject {
       structureLocation[0] ||
       null
     );
+  }
+
+  addExemptTypeID(inputValue) {
+    if (!inputValue) return;
+    const inputAsArray =
+      Array.isArray(inputValue) || inputValue instanceof Set
+        ? [...inputValue]
+        : [inputValue];
+
+    this.exemptTypeIDs = new Set([...this.exemptTypeIDs, ...inputAsArray]);
+    return new ApplicationSettingsObject(this);
+  }
+  removeExemptTypeID(inputValue) {
+    if (!inputValue) return;
+    const inputAsArray =
+      Array.isArray(inputValue) || inputValue instanceof Set
+        ? [...inputValue]
+        : [inputValue];
+
+    this.exemptTypeIDs = new Set(
+      [...this.exemptTypeIDs].filter((i) => !inputAsArray.includes(i))
+    );
+    return new ApplicationSettingsObject(this);
   }
 }
 

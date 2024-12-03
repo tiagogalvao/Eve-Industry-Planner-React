@@ -1,6 +1,7 @@
 import { getAnalytics, logEvent } from "firebase/analytics";
 import { useContext } from "react";
 import {
+  FirebaseListenersContext,
   IsLoggedInContext,
   UserJobSnapshotContext,
   UsersContext,
@@ -11,6 +12,8 @@ import { useHelperFunction } from "../GeneralHooks/useHelperFunctions";
 import uploadGroupsToFirebase from "../../Functions/Firebase/uploadGroupData";
 import deleteJobFromFirebase from "../../Functions/Firebase/deleteJob";
 import archiveJobInFirebase from "../../Functions/Firebase/archiveJob";
+import closeFirebaseListeners from "../../Functions/Firebase/closeListenerRequests";
+import { useNavigate } from "react-router-dom";
 
 export function useArchiveGroupJobs() {
   const { users, updateUsers } = useContext(UsersContext);
@@ -19,9 +22,13 @@ export function useArchiveGroupJobs() {
     useContext(JobArrayContext);
   const { userJobSnapshot } = useContext(UserJobSnapshotContext);
   const { isLoggedIn } = useContext(IsLoggedInContext);
+  const { firebaseListeners, updateFirebaseListeners } = useContext(
+    FirebaseListenersContext
+  );
   const { updateMainUserDoc } = useFirebase();
   const { sendSnackbarNotificationSuccess } = useHelperFunction();
   const analytics = getAnalytics();
+  const navigate = useNavigate();
 
   const archiveGroupJobs = async (selectedJobs) => {
     const { groupID, groupName } = groupArray.find(
@@ -33,15 +40,17 @@ export function useArchiveGroupJobs() {
     let newLinkedTrans = new Set(newUserArray[parentUserIndex].linkedTrans);
     let newLinkedJobs = new Set(newUserArray[parentUserIndex].linkedJobs);
 
+    const filteredJobs = selectedJobs.filter((job) =>
+      userJobSnapshot.some((i) => i.jobID === job.jobID)
+    );
+
     logEvent(analytics, "Archive Group Jobs", {
       UID: newUserArray[parentUserIndex].accountID,
       groupID: groupID,
-      groupSize: selectedJobs.length,
+      groupSize: filteredJobs.length,
     });
 
-    for (let selectedJob of selectedJobs) {
-      if (userJobSnapshot.some((i) => i.jobID === selectedJob.jobID)) continue;
-
+    for (let selectedJob of filteredJobs) {
       newLinkedOrders = new Set([...newLinkedOrders], selectedJob.apiOrders);
       newLinkedTrans = new Set([...newLinkedTrans], selectedJob.linkedTrans);
       newLinkedJobs = new Set([...newLinkedJobs], selectedJob.linkedJobs);
@@ -55,16 +64,21 @@ export function useArchiveGroupJobs() {
 
     let newGroupArray = groupArray.filter((i) => i.groupID !== activeGroup);
 
-    for (let selectedJob of selectedJobs) {
-      if (userJobSnapshot.some((i) => i.jobID === selectedJob.jobID)) continue;
+    for (let selectedJob of filteredJobs) {
       await archiveJobInFirebase(selectedJob);
       await deleteJobFromFirebase(selectedJob);
     }
+    updateActiveGroup(null);
     updateUsers(newUserArray);
     updateGroupArray(newGroupArray);
     updateJobArray(newJobArray);
-    updateActiveGroup(null);
     if (isLoggedIn) {
+      closeFirebaseListeners(
+        filteredJobs,
+        firebaseListeners,
+        updateFirebaseListeners,
+        isLoggedIn
+      );
       await uploadGroupsToFirebase(newGroupArray);
       await updateMainUserDoc();
     }

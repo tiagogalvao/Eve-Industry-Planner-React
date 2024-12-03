@@ -5,14 +5,21 @@ function useRightContentDrawer() {
   function toggleRightDrawerColapse(
     newContentID,
     existingContentID,
-    updaterFunction
+    updaterFunction,
+    pageRequiresDrawerToBeOpen = false
   ) {
     const tutorialFlag = checkDisplayTutorials();
+    if (pageRequiresDrawerToBeOpen) {
+      updaterFunction(true);
+      return;
+    }
 
     if (newContentID === existingContentID && !tutorialFlag) {
       updaterFunction(false);
+      return;
     } else {
       updaterFunction(true);
+      return;
     }
   }
 

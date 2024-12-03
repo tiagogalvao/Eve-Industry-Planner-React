@@ -80,7 +80,6 @@ export function useJobPlannerSideMenuFunctions(
         icon: <ShoppingCartIcon />,
         tooltip:
           "Displays a shopping list of the remaining materials needed to build all of the selected jobs.",
-        disabled: multiSelectJobPlanner.length === 0,
         onClick: () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();
@@ -95,7 +94,6 @@ export function useJobPlannerSideMenuFunctions(
         icon: <AccountTreeIcon />,
         tooltip:
           "Sets up new jobs to build the combined ingredient totals of each selected job cards.",
-        disabled: multiSelectJobPlanner.length === 0,
         onClick: () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();
@@ -109,7 +107,6 @@ export function useJobPlannerSideMenuFunctions(
         displayText: "Add Item Costs",
         icon: <PriceCheckIcon />,
         tooltip: "Input item costs for all selected jobs.",
-        disabled: multiSelectJobPlanner.length === 0,
         onClick: async () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();
@@ -127,7 +124,6 @@ export function useJobPlannerSideMenuFunctions(
         displayText: "Move Backwards",
         icon: <ArrowUpwardIcon />,
         tooltip: "Moves the selected jobs 1 step backwards on the planner.",
-        disabled: multiSelectJobPlanner.length === 0,
         onClick: () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();
@@ -140,7 +136,6 @@ export function useJobPlannerSideMenuFunctions(
         displayText: "Move Forwards",
         icon: <ArrowDownwardIcon />,
         tooltip: "Moves the selected jobs 1 step forwards on the planner.",
-        disabled: multiSelectJobPlanner.length === 0,
         onClick: () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();
@@ -153,9 +148,6 @@ export function useJobPlannerSideMenuFunctions(
         displayText: "Merge Jobs",
         icon: <CallMergeIcon />,
         tooltip: "Merges the selected jobs into one.",
-        disabled: multiSelectJobPlanner.every(
-          (i) => i.itemID === multiSelectJobPlanner[0].itemID
-        ),
         onClick: () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();
@@ -179,7 +171,6 @@ export function useJobPlannerSideMenuFunctions(
         displayText: "Clear Selection",
         icon: <DeselectIcon />,
         tooltip: "Clears the selected jobs.",
-        disabled: multiSelectJobPlanner.length === 0,
         onClick: () => {
           updateMultiSelectJobPlanner([]);
         },
@@ -188,7 +179,7 @@ export function useJobPlannerSideMenuFunctions(
         displayText: "Delete",
         icon: <DeleteSweepIcon />,
         tooltip: "Deletes the selected jobs from the planner.",
-        disabled: multiSelectJobPlanner.length === 0,
+        hoverColor: "error.main",
         onClick: () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();

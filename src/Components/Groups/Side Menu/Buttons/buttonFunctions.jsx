@@ -25,7 +25,7 @@ import {
 import { useJobManagement } from "../../../../Hooks/useJobManagement";
 import { useMoveItemsOnPlanner } from "../../../../Hooks/GeneralHooks/useMoveItemsOnPlanner";
 import { useNavigate } from "react-router-dom";
-import { DoneAll } from "@mui/icons-material";
+import { ArchiveOutlined, DoneAll } from "@mui/icons-material";
 import passBuildCostsToParentJobs from "../../../../Functions/Shared/passBuildCosts";
 import {
   FirebaseListenersContext,
@@ -37,13 +37,15 @@ import manageListenerRequests from "../../../../Functions/Firebase/manageListene
 import { useHelperFunction } from "../../../../Hooks/GeneralHooks/useHelperFunctions";
 import { useDeleteMultipleJobs } from "../../../../Hooks/JobHooks/useDeleteMultipleJobs";
 import useBuildJobTree from "../../../../Hooks/JobHooks/useBuildNextMaterials";
+import { useArchiveGroupJobs } from "../../../../Hooks/GroupHooks/useArchiveGroupJobs";
 
 export function useGroupPageSideMenuFunctions(
   groupJobs,
   updateExpandRightContentMenu,
   rightContentMenuContentID,
   updateRightContentMenuContentID,
-  setSkeletonElementsToDisplay
+  setSkeletonElementsToDisplay,
+  pageRequiresDrawerToBeOpen
 ) {
   const { activeGroup } = useContext(ActiveJobContext);
   const { jobArray, groupArray, updateJobArray, updateGroupArray } =
@@ -70,6 +72,7 @@ export function useGroupPageSideMenuFunctions(
     useHelperFunction();
   const { deleteMultipleJobs } = useDeleteMultipleJobs();
   const { buildNextMaterials } = useBuildJobTree();
+  const { archiveGroupJobs } = useArchiveGroupJobs();
   const navigate = useNavigate();
   const activeGroupObject = groupArray.find((i) => i.groupID === activeGroup);
 
@@ -98,7 +101,8 @@ export function useGroupPageSideMenuFunctions(
           toggleRightDrawerColapse(
             1,
             rightContentMenuContentID,
-            updateExpandRightContentMenu
+            updateExpandRightContentMenu,
+            pageRequiresDrawerToBeOpen
           );
         },
       },
@@ -246,7 +250,6 @@ export function useGroupPageSideMenuFunctions(
         displayText: "Clear Selection",
         icon: <DeselectIcon />,
         tooltip: "Clears the selected jobs.",
-        disabled: multiSelectJobPlanner.length === 0,
         onClick: () => {
           updateMultiSelectJobPlanner([]);
         },
@@ -256,7 +259,7 @@ export function useGroupPageSideMenuFunctions(
         icon: <DeleteSweepIcon />,
         hoverColor: "error.main",
         tooltip: "Deletes the selected jobs from the group.",
-        disabled: multiSelectJobPlanner.length === 0,
+        divider: true,
         onClick: () => {
           if (multiSelectJobPlanner.length === 0) {
             throwDialogError();
@@ -264,6 +267,17 @@ export function useGroupPageSideMenuFunctions(
           }
           deleteMultipleJobs(multiSelectJobPlanner);
           updateMultiSelectJobPlanner([]);
+        },
+      },
+      {
+        displayText: "Archive Group Jobs",
+        icon: <ArchiveOutlined />,
+        hoverColor: "error.main",
+        tooltip:
+          "Archives all jobs except the output jobs and then deletes the group.",
+        onClick: async () => {
+          archiveGroupJobs(groupJobs);
+          navigate("/jobplanner");
         },
       },
     ];

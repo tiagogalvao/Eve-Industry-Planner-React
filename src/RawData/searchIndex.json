@@ -7686,19 +7686,19 @@
     "jobType": 1
   },
   {
-    "name": "Small Degenerative Concussion Bomb I",
+    "name": "'Degenerative' Small Proton Smartbomb",
     "itemID": 21534,
     "blueprintID": 21535,
     "jobType": 1
   },
   {
-    "name": "Medium Degenerative Concussion Bomb I",
+    "name": "'Dwindling' Medium Proton Smartbomb",
     "itemID": 21536,
     "blueprintID": 21537,
     "jobType": 1
   },
   {
-    "name": "Large Degenerative Concussion Bomb I",
+    "name": "'Regressive' Large Proton Smartbomb",
     "itemID": 21538,
     "blueprintID": 21539,
     "jobType": 1
@@ -8688,19 +8688,19 @@
     "jobType": 1
   },
   {
-    "name": "'Pike' Small EMP Smartbomb I",
+    "name": "'Pike' Small EMP Smartbomb",
     "itemID": 23864,
     "blueprintID": 23865,
     "jobType": 1
   },
   {
-    "name": "'Lance' Medium EMP Smartbomb I",
+    "name": "'Lance' Medium EMP Smartbomb",
     "itemID": 23866,
     "blueprintID": 23867,
     "jobType": 1
   },
   {
-    "name": "'Warhammer' Large EMP Smartbomb I",
+    "name": "'Warhammer' Large EMP Smartbomb",
     "itemID": 23868,
     "blueprintID": 23869,
     "jobType": 1
@@ -15510,7 +15510,7 @@
     "jobType": 1
   },
   {
-    "name": "Territorial Claim Unit",
+    "name": "Defunct Territorial Claim Unit",
     "itemID": 32226,
     "blueprintID": 2737,
     "jobType": 1
@@ -23598,43 +23598,85 @@
     "jobType": 1
   },
   {
-    "name": "Isogen Prospecting Array 1",
+    "name": "Tritanium Prospecting Array 1",
+    "itemID": 82579,
+    "blueprintID": 82606,
+    "jobType": 1
+  },
+  {
+    "name": "Isogen Prospecting Array 2",
     "itemID": 82580,
     "blueprintID": 82601,
     "jobType": 1
   },
   {
-    "name": "Nocxium Prospecting Array 1",
+    "name": "Isogen Prospecting Array 1",
+    "itemID": 82581,
+    "blueprintID": 82600,
+    "jobType": 1
+  },
+  {
+    "name": "Nocxium Prospecting Array 2",
     "itemID": 82582,
     "blueprintID": 82599,
     "jobType": 1
   },
   {
-    "name": "Zydrine Prospecting Array 1",
+    "name": "Nocxium Prospecting Array 1",
+    "itemID": 82583,
+    "blueprintID": 82598,
+    "jobType": 1
+  },
+  {
+    "name": "Zydrine Prospecting Array 2",
     "itemID": 82584,
     "blueprintID": 82597,
     "jobType": 1
   },
   {
-    "name": "Megacyte Prospecting Array 1",
+    "name": "Zydrine Prospecting Array 1",
+    "itemID": 82585,
+    "blueprintID": 82596,
+    "jobType": 1
+  },
+  {
+    "name": "Megacyte Prospecting Array 2",
     "itemID": 82586,
     "blueprintID": 82595,
     "jobType": 1
   },
   {
-    "name": "Pyerite Prospecting Array 1",
+    "name": "Megacyte Prospecting Array 1",
+    "itemID": 82587,
+    "blueprintID": 82594,
+    "jobType": 1
+  },
+  {
+    "name": "Pyerite Prospecting Array 2",
     "itemID": 82588,
     "blueprintID": 82605,
     "jobType": 1
   },
   {
-    "name": "Mexallon Prospecting Array 1",
+    "name": "Pyerite Prospecting Array 1",
+    "itemID": 82589,
+    "blueprintID": 82604,
+    "jobType": 1
+  },
+  {
+    "name": "Mexallon Prospecting Array 2",
     "itemID": 82590,
     "blueprintID": 82603,
     "jobType": 1
   },
   {
-    "name": "Tritanium Prospecting Array 1",
+    "name": "Mexallon Prospecting Array 1",
+    "itemID": 82591,
+    "blueprintID": 82602,
+    "jobType": 1
+  },
+  {
+    "name": "Tritanium Prospecting Array 2",
     "itemID": 82592,
     "blueprintID": 82607,
     "jobType": 1
@@ -23733,6 +23775,1122 @@
     "name": "Dread Guristas Signature Radius Suppressor",
     "itemID": 83644,
     "blueprintID": 83646,
+    "jobType": 1
+  },
+  {
+    "name": "'Blasting' Large Graviton Smartbomb",
+    "itemID": 84495,
+    "blueprintID": 84501,
+    "jobType": 1
+  },
+  {
+    "name": "'Scalding' Large Plasma Smartbomb",
+    "itemID": 84496,
+    "blueprintID": 84502,
+    "jobType": 1
+  },
+  {
+    "name": "'Booming' Medium Graviton Smartbomb",
+    "itemID": 84497,
+    "blueprintID": 84503,
+    "jobType": 1
+  },
+  {
+    "name": "'Boiling' Medium Plasma Smartbomb",
+    "itemID": 84498,
+    "blueprintID": 84504,
+    "jobType": 1
+  },
+  {
+    "name": "'Roaring' Small Graviton Smartbomb",
+    "itemID": 84499,
+    "blueprintID": 84505,
+    "jobType": 1
+  },
+  {
+    "name": "'Seething' Small Plasma Smartbomb",
+    "itemID": 84500,
+    "blueprintID": 84506,
+    "jobType": 1
+  },
+  {
+    "name": "Small Breacher Pod Launcher",
+    "itemID": 85084,
+    "blueprintID": 86179,
+    "jobType": 1
+  },
+  {
+    "name": "Medium Breacher Pod Launcher",
+    "itemID": 85085,
+    "blueprintID": 86178,
+    "jobType": 1
+  },
+  {
+    "name": "Cenotaph",
+    "itemID": 85086,
+    "blueprintID": 85180,
+    "jobType": 1
+  },
+  {
+    "name": "Tholos",
+    "itemID": 85087,
+    "blueprintID": 85181,
+    "jobType": 1
+  },
+  {
+    "name": "SCARAB Breacher Pod S",
+    "itemID": 85088,
+    "blueprintID": 86176,
+    "jobType": 1
+  },
+  {
+    "name": "SCARAB Breacher Pod M",
+    "itemID": 85089,
+    "blueprintID": 86177,
+    "jobType": 1
+  },
+  {
+    "name": "Mercenary Den",
+    "itemID": 85230,
+    "blueprintID": 85232,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Small Armor Plate Mutaplasmid",
+    "itemID": 85438,
+    "blueprintID": 85851,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Armor Plate Mutaplasmid",
+    "itemID": 85439,
+    "blueprintID": 85853,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Small Armor Plate Mutaplasmid",
+    "itemID": 85440,
+    "blueprintID": 85852,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Small Armor Repairer Mutaplasmid",
+    "itemID": 85441,
+    "blueprintID": 85862,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Armor Repairer Mutaplasmid",
+    "itemID": 85442,
+    "blueprintID": 85864,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Small Armor Repairer Mutaplasmid",
+    "itemID": 85443,
+    "blueprintID": 85863,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Ancillary Armor Repairer Mutaplasmid",
+    "itemID": 85445,
+    "blueprintID": 85865,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Armor Plate Mutaplasmid",
+    "itemID": 85446,
+    "blueprintID": 85868,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Medium Armor Plate Mutaplasmid",
+    "itemID": 85447,
+    "blueprintID": 85867,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Medium Armor Plate Mutaplasmid",
+    "itemID": 85448,
+    "blueprintID": 85866,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Medium Armor Repairer Mutaplasmid",
+    "itemID": 85449,
+    "blueprintID": 85869,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Medium Armor Repairer Mutaplasmid",
+    "itemID": 85450,
+    "blueprintID": 85870,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Ancillary Armor Repairer Mutaplasmid",
+    "itemID": 85451,
+    "blueprintID": 85854,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Armor Repairer Mutaplasmid",
+    "itemID": 85452,
+    "blueprintID": 85871,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Large Armor Plate Mutaplasmid",
+    "itemID": 85453,
+    "blueprintID": 85872,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Large Armor Plate Mutaplasmid",
+    "itemID": 85454,
+    "blueprintID": 85874,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Large Armor Repairer Mutaplasmid",
+    "itemID": 85455,
+    "blueprintID": 85875,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Large Armor Plate Mutaplasmid",
+    "itemID": 85456,
+    "blueprintID": 85873,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Large Armor Repairer Mutaplasmid",
+    "itemID": 85457,
+    "blueprintID": 85856,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Large Armor Repairer Mutaplasmid",
+    "itemID": 85458,
+    "blueprintID": 85855,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Large Ancillary Armor Repairer Mutaplasmid",
+    "itemID": 85459,
+    "blueprintID": 85857,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Capital Armor Repairer Mutaplasmid",
+    "itemID": 85460,
+    "blueprintID": 85858,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Capital Armor Repairer Mutaplasmid",
+    "itemID": 85461,
+    "blueprintID": 85860,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Capital Armor Repairer Mutaplasmid",
+    "itemID": 85462,
+    "blueprintID": 85859,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Capital Ancillary Armor Repairer Mutaplasmid",
+    "itemID": 85463,
+    "blueprintID": 85861,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 1MN Afterburner Mutaplasmid",
+    "itemID": 85464,
+    "blueprintID": 85940,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 1MN Afterburner Mutaplasmid",
+    "itemID": 85465,
+    "blueprintID": 85942,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 1MN Afterburner Mutaplasmid",
+    "itemID": 85466,
+    "blueprintID": 85941,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 5MN Microwarpdrive Mutaplasmid",
+    "itemID": 85467,
+    "blueprintID": 85952,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 5MN Microwarpdrive Mutaplasmid",
+    "itemID": 85468,
+    "blueprintID": 85951,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 5MN Microwarpdrive Mutaplasmid",
+    "itemID": 85469,
+    "blueprintID": 85953,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 10MN Afterburner Mutaplasmid",
+    "itemID": 85470,
+    "blueprintID": 85954,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 10MN Afterburner Mutaplasmid",
+    "itemID": 85471,
+    "blueprintID": 85956,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 10MN Afterburner Mutaplasmid",
+    "itemID": 85472,
+    "blueprintID": 85955,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 50MN Microwarpdrive Mutaplasmid",
+    "itemID": 85473,
+    "blueprintID": 85959,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 50MN Microwarpdrive Mutaplasmid",
+    "itemID": 85474,
+    "blueprintID": 85957,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 50MN Microwarpdrive Mutaplasmid",
+    "itemID": 85475,
+    "blueprintID": 85958,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 100MN Afterburner Mutaplasmid",
+    "itemID": 85476,
+    "blueprintID": 85943,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 100MN Afterburner Mutaplasmid ",
+    "itemID": 85477,
+    "blueprintID": 85960,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 100MN Afterburner Mutaplasmid",
+    "itemID": 85478,
+    "blueprintID": 85961,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 500MN Microwarpdrive Mutaplasmid",
+    "itemID": 85479,
+    "blueprintID": 85962,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 500MN Microwarpdrive Mutaplasmid",
+    "itemID": 85480,
+    "blueprintID": 85963,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 500MN Microwarpdrive Mutaplasmid",
+    "itemID": 85481,
+    "blueprintID": 85944,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 10000MN Afterburner Mutaplasmid",
+    "itemID": 85482,
+    "blueprintID": 85945,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 10000MN Afterburner Mutaplasmid",
+    "itemID": 85483,
+    "blueprintID": 85947,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 10000MN Afterburner Mutaplasmid",
+    "itemID": 85484,
+    "blueprintID": 85946,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid 50000MN Microwarpdrive Mutaplasmid",
+    "itemID": 85485,
+    "blueprintID": 85949,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed 50000MN Microwarpdrive Mutaplasmid",
+    "itemID": 85486,
+    "blueprintID": 85948,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable 50000MN Microwarpdrive Mutaplasmid",
+    "itemID": 85487,
+    "blueprintID": 85950,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Damage Control Mutaplasmid",
+    "itemID": 85488,
+    "blueprintID": 85973,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Damage Control Mutaplasmid",
+    "itemID": 85489,
+    "blueprintID": 85977,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Assault Damage Control Mutaplasmid",
+    "itemID": 85490,
+    "blueprintID": 85978,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Damage Control Mutaplasmid",
+    "itemID": 85491,
+    "blueprintID": 85976,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Assault Damage Control Mutaplasmid",
+    "itemID": 85492,
+    "blueprintID": 85974,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Assault Damage Control Mutaplasmid",
+    "itemID": 85493,
+    "blueprintID": 85975,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Small Cap Battery Mutaplasmid",
+    "itemID": 85494,
+    "blueprintID": 85981,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Cap Battery Mutaplasmid",
+    "itemID": 85495,
+    "blueprintID": 85983,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Small Cap Battery Mutaplasmid",
+    "itemID": 85496,
+    "blueprintID": 85982,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Small Energy Neutralizer Mutaplasmid",
+    "itemID": 85497,
+    "blueprintID": 85992,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Small Energy Neutralizer Mutaplasmid",
+    "itemID": 85498,
+    "blueprintID": 85993,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Energy Neutralizer Mutaplasmid",
+    "itemID": 85499,
+    "blueprintID": 85994,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Small Energy Nosferatu Mutaplasmid",
+    "itemID": 85500,
+    "blueprintID": 85995,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Small Energy Nosferatu Mutaplasmid",
+    "itemID": 85501,
+    "blueprintID": 85996,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Energy Nosferatu Mutaplasmid",
+    "itemID": 85502,
+    "blueprintID": 85997,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Medium Cap Battery Mutaplasmid",
+    "itemID": 85504,
+    "blueprintID": 85998,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Medium Cap Battery Mutaplasmid",
+    "itemID": 85506,
+    "blueprintID": 85999,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Cap Battery Mutaplasmid",
+    "itemID": 85507,
+    "blueprintID": 86000,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Medium Energy Neutralizer Mutaplasmid",
+    "itemID": 85508,
+    "blueprintID": 86001,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Medium Energy Neutralizer Mutaplasmid",
+    "itemID": 85509,
+    "blueprintID": 85984,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Energy Neutralizer Mutaplasmid",
+    "itemID": 85510,
+    "blueprintID": 86002,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Medium Energy Nosferatu Mutaplasmid",
+    "itemID": 85511,
+    "blueprintID": 86003,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Energy Nosferatu Mutaplasmid",
+    "itemID": 85512,
+    "blueprintID": 86005,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Medium Energy Nosferatu Mutaplasmid",
+    "itemID": 85513,
+    "blueprintID": 86004,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Large Cap Battery Mutaplasmid",
+    "itemID": 85514,
+    "blueprintID": 86007,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Large Cap Battery Mutaplasmid",
+    "itemID": 85515,
+    "blueprintID": 86006,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Large Cap Battery Mutaplasmid",
+    "itemID": 85516,
+    "blueprintID": 86008,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Heavy Energy Neutralizer Mutaplasmid",
+    "itemID": 85517,
+    "blueprintID": 86009,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Heavy Energy Neutralizer Mutaplasmid",
+    "itemID": 85518,
+    "blueprintID": 86010,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Heavy Energy Nosferatu Mutaplasmid",
+    "itemID": 85519,
+    "blueprintID": 86012,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Heavy Energy Nosferatu Mutaplasmid",
+    "itemID": 85520,
+    "blueprintID": 85985,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Heavy Energy Neutralizer Mutaplasmid",
+    "itemID": 85521,
+    "blueprintID": 86011,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Heavy Energy Nosferatu Mutaplasmid",
+    "itemID": 85522,
+    "blueprintID": 86013,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Capital Energy Neutralizer Mutaplasmid",
+    "itemID": 85523,
+    "blueprintID": 85988,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Capital Energy Neutralizer Mutaplasmid",
+    "itemID": 85524,
+    "blueprintID": 85987,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Capital Energy Neutralizer Mutaplasmid",
+    "itemID": 85525,
+    "blueprintID": 85986,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Capital Energy Nosferatu Mutaplasmid",
+    "itemID": 85526,
+    "blueprintID": 85989,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Capital Energy Nosferatu Mutaplasmid",
+    "itemID": 85527,
+    "blueprintID": 85990,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Capital Energy Nosferatu Mutaplasmid",
+    "itemID": 85528,
+    "blueprintID": 85991,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Small Shield Booster Mutaplasmid",
+    "itemID": 85529,
+    "blueprintID": 86016,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Small Shield Extender Mutaplasmid",
+    "itemID": 85530,
+    "blueprintID": 86027,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Shield Booster Mutaplasmid",
+    "itemID": 85531,
+    "blueprintID": 86018,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Small Shield Extender Mutaplasmid",
+    "itemID": 85532,
+    "blueprintID": 86028,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Small Shield Booster Mutaplasmid",
+    "itemID": 85533,
+    "blueprintID": 86017,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Small Shield Extender Mutaplasmid",
+    "itemID": 85534,
+    "blueprintID": 86029,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Medium Shield Booster Mutaplasmid",
+    "itemID": 85535,
+    "blueprintID": 86030,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Medium Shield Booster Mutaplasmid",
+    "itemID": 85536,
+    "blueprintID": 86031,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Shield Booster Mutaplasmid",
+    "itemID": 85537,
+    "blueprintID": 86032,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Medium Shield Extender Mutaplasmid",
+    "itemID": 85538,
+    "blueprintID": 86034,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Shield Extender Mutaplasmid",
+    "itemID": 85539,
+    "blueprintID": 86035,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Medium Shield Extender Mutaplasmid",
+    "itemID": 85540,
+    "blueprintID": 86033,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Medium Ancillary Shield Booster Mutaplasmid",
+    "itemID": 85541,
+    "blueprintID": 86036,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Large Shield Booster Mutaplasmid",
+    "itemID": 85542,
+    "blueprintID": 86019,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Large Shield Booster Mutaplasmid",
+    "itemID": 85543,
+    "blueprintID": 86037,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Large Shield Extender Mutaplasmid",
+    "itemID": 85544,
+    "blueprintID": 86040,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Large Shield Booster Mutaplasmid",
+    "itemID": 85545,
+    "blueprintID": 86038,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Large Shield Extender Mutaplasmid",
+    "itemID": 85546,
+    "blueprintID": 86039,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Large Shield Extender Mutaplasmid",
+    "itemID": 85547,
+    "blueprintID": 86041,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Large Ancillary Shield Booster Mutaplasmid",
+    "itemID": 85548,
+    "blueprintID": 86042,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable X-Large Shield Booster Mutaplasmid",
+    "itemID": 85549,
+    "blueprintID": 86021,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed X-Large Shield Booster Mutaplasmid",
+    "itemID": 85550,
+    "blueprintID": 86043,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid X-Large Shield Booster Mutaplasmid",
+    "itemID": 85551,
+    "blueprintID": 86020,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable X-Large Ancillary Shield Booster Mutaplasmid",
+    "itemID": 85552,
+    "blueprintID": 86022,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Capital Shield Booster Mutaplasmid",
+    "itemID": 85553,
+    "blueprintID": 86023,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Capital Ancillary Shield Booster Mutaplasmid",
+    "itemID": 85554,
+    "blueprintID": 86026,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Capital Shield Booster Mutaplasmid",
+    "itemID": 85555,
+    "blueprintID": 86024,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Capital Shield Booster Mutaplasmid",
+    "itemID": 85556,
+    "blueprintID": 86025,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Stasis Webifier Mutaplasmid",
+    "itemID": 85557,
+    "blueprintID": 86044,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Stasis Webifier Mutaplasmid",
+    "itemID": 85558,
+    "blueprintID": 86046,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Stasis Webifier Mutaplasmid",
+    "itemID": 85559,
+    "blueprintID": 86045,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Warp Disruptor Mutaplasmid",
+    "itemID": 85640,
+    "blueprintID": 86047,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Warp Disruptor Mutaplasmid",
+    "itemID": 85641,
+    "blueprintID": 86049,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Warp Disruptor Mutaplasmid",
+    "itemID": 85642,
+    "blueprintID": 86048,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Warp Scrambler Mutaplasmid",
+    "itemID": 85643,
+    "blueprintID": 86058,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Warp Scrambler Mutaplasmid",
+    "itemID": 85644,
+    "blueprintID": 86050,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Warp Scrambler Mutaplasmid",
+    "itemID": 85645,
+    "blueprintID": 86051,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Heavy Warp Scrambler Mutaplasmid",
+    "itemID": 85646,
+    "blueprintID": 86055,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Heavy Warp Scrambler Mutaplasmid",
+    "itemID": 85647,
+    "blueprintID": 86056,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Heavy Warp Scrambler Mutaplasmid",
+    "itemID": 85648,
+    "blueprintID": 86057,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Heavy Warp Disruptor Mutaplasmid",
+    "itemID": 85649,
+    "blueprintID": 86052,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Heavy Warp Disruptor Mutaplasmid",
+    "itemID": 85650,
+    "blueprintID": 86053,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Heavy Warp Disruptor Mutaplasmid",
+    "itemID": 85651,
+    "blueprintID": 86054,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Ballistic Control System Mutaplasmid",
+    "itemID": 85652,
+    "blueprintID": 86059,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Ballistic Control System Mutaplasmid",
+    "itemID": 85653,
+    "blueprintID": 86060,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Ballistic Control System Mutaplasmid",
+    "itemID": 85654,
+    "blueprintID": 86061,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Entropic Radiation Sink Mutaplasmid",
+    "itemID": 85655,
+    "blueprintID": 86070,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Entropic Radiation Sink Mutaplasmid",
+    "itemID": 85656,
+    "blueprintID": 86072,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Entropic Radiation Sink Mutaplasmid",
+    "itemID": 85657,
+    "blueprintID": 86071,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Gyrostabilizer Mutaplasmid",
+    "itemID": 85660,
+    "blueprintID": 86073,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Gyrostabilizer Mutaplasmid",
+    "itemID": 85661,
+    "blueprintID": 86074,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Gyrostabilizer Mutaplasmid",
+    "itemID": 85662,
+    "blueprintID": 86075,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Heat Sink Mutaplasmid",
+    "itemID": 85663,
+    "blueprintID": 86076,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Heat Sink Mutaplasmid",
+    "itemID": 85664,
+    "blueprintID": 86078,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Heat Sink Mutaplasmid",
+    "itemID": 85665,
+    "blueprintID": 86077,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Magnetic Field Stabilizer Mutaplasmid",
+    "itemID": 85666,
+    "blueprintID": 86079,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Magnetic Field Stabilizer Mutaplasmid",
+    "itemID": 85667,
+    "blueprintID": 86062,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Magnetic Field Stabilizer Mutaplasmid",
+    "itemID": 85668,
+    "blueprintID": 86063,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Siege Module Mutaplasmid",
+    "itemID": 85669,
+    "blueprintID": 86064,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Siege Module Mutaplasmid",
+    "itemID": 85670,
+    "blueprintID": 86065,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Siege Module Mutaplasmid",
+    "itemID": 85671,
+    "blueprintID": 86066,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Decayed Vorton Tuning System Mutaplasmid",
+    "itemID": 85672,
+    "blueprintID": 86067,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Unstable Vorton Tuning System Mutaplasmid",
+    "itemID": 85673,
+    "blueprintID": 86069,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Gravid Vorton Tuning System Mutaplasmid",
+    "itemID": 85674,
+    "blueprintID": 86068,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Light Drone Durability Mutaplasmid",
+    "itemID": 85675,
+    "blueprintID": 86125,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Light Drone Navigation Mutaplasmid",
+    "itemID": 85676,
+    "blueprintID": 86127,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Light Drone Projection Mutaplasmid",
+    "itemID": 85677,
+    "blueprintID": 86136,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Light Drone Firepower Mutaplasmid",
+    "itemID": 85678,
+    "blueprintID": 86126,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Medium Drone Durability Mutaplasmid",
+    "itemID": 85679,
+    "blueprintID": 86137,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Medium Drone Navigation Mutaplasmid",
+    "itemID": 85680,
+    "blueprintID": 86139,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Medium Drone Firepower Mutaplasmid",
+    "itemID": 85681,
+    "blueprintID": 86138,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Medium Drone Projection Mutaplasmid",
+    "itemID": 85682,
+    "blueprintID": 86140,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Heavy Drone Durability Mutaplasmid",
+    "itemID": 85685,
+    "blueprintID": 86141,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Heavy Drone Navigation Mutaplasmid",
+    "itemID": 85686,
+    "blueprintID": 86128,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Heavy Drone Projection Mutaplasmid",
+    "itemID": 85687,
+    "blueprintID": 86129,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Heavy Drone Firepower Mutaplasmid",
+    "itemID": 85688,
+    "blueprintID": 86142,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Sentry Drone Durability Mutaplasmid",
+    "itemID": 85690,
+    "blueprintID": 86130,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Sentry Drone Firepower Mutaplasmid",
+    "itemID": 85691,
+    "blueprintID": 86131,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Sentry Drone Precision Mutaplasmid",
+    "itemID": 85692,
+    "blueprintID": 86132,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Exigent Sentry Drone Projection Mutaplasmid",
+    "itemID": 85693,
+    "blueprintID": 86133,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Radical Drone Damage Amplifier Mutaplasmid",
+    "itemID": 85696,
+    "blueprintID": 86134,
+    "jobType": 1
+  },
+  {
+    "name": "Glorified Radical Fighter Support Unit Mutaplasmid",
+    "itemID": 85698,
+    "blueprintID": 86135,
+    "jobType": 1
+  },
+  {
+    "name": "Neural Lace 'Bluefire' Net Ablation 960-10",
+    "itemID": 85748,
+    "blueprintID": 85749,
+    "jobType": 1
+  },
+  {
+    "name": "Deathless Circle Relic Analyzer",
+    "itemID": 85750,
+    "blueprintID": 85751,
+    "jobType": 1
+  },
+  {
+    "name": "'Seneschal' Mercenary Den",
+    "itemID": 85980,
+    "blueprintID": 86180,
     "jobType": 1
   }
 ]

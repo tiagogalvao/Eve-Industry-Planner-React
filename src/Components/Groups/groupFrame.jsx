@@ -58,6 +58,8 @@ function GroupPageFrame({ colorMode }) {
   const activeGroupObject = groupArray.find((i) => i.groupID === groupID);
   const deviceNotMobile = useMediaQuery((theme) => theme.breakpoints.up("sm"));
 
+  const pageRequiresRightDrawerOpen = true;
+
   const groupJobs = useMemo(() => {
     if (!activeGroupObject) return [];
     const groupJobs = [...jobArray]
@@ -134,7 +136,8 @@ function GroupPageFrame({ colorMode }) {
     updateExpandRightContentMenu,
     rightContentMenuContentID,
     updateRightContentMenuContentID,
-    setSkeletonElementsToDisplay
+    setSkeletonElementsToDisplay,
+    pageRequiresRightDrawerOpen
   );
 
   if (!activeGroup) return <LoadingPage />;
@@ -195,10 +198,12 @@ function GroupPageFrame({ colorMode }) {
               setSkeletonElementsToDisplay={setSkeletonElementsToDisplay}
               highlightedItems={highlightedItems}
               updateHighlightedItem={updateHighlightedItem}
+              pageRequiresDrawerToBeOpen={pageRequiresRightDrawerOpen}
             />
           }
           expandRightContentMenu={expandRightContentMenu}
           updateExpandRightContentMenu={updateExpandRightContentMenu}
+          pageRequiresDrawerToBeOpen={pageRequiresRightDrawerOpen}
         />
       )}
     </>

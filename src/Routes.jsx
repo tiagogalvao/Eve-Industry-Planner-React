@@ -11,7 +11,6 @@ import { IsLoggedInContext } from "./Context/AuthContext";
 import { LoadingPage } from "./Components/loadingPage";
 import { getBoolean } from "firebase/remote-config";
 import { remoteConfig } from "./firebase";
-import GroupPage from "./Components/Job Planner/Groups/GroupPage";
 import GroupPageFrame from "./Components/Groups/groupFrame";
 
 const AuthMainUser = lazy(() => import("./Components/Auth/MainUserAuth"));

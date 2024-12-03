@@ -6,6 +6,7 @@ import { Footer } from "../Footer/Footer";
 import LayoutSettingsFrame from "./Standard Layout/layoutSettingsFrame";
 import JobSettingsFrame from "./Standard Layout/jobSettingsFrame";
 import CustomStructuresFrame from "./Standard Layout/customStructuresFrame";
+import BlueprintSettingsFrame from "./Standard Layout/blueprintSettingsFrame";
 
 function SettingsPageV2({ colorMode }) {
   const [selectedTab, changeSelectedTab] = useState("0");
@@ -50,14 +51,13 @@ function SettingsPageV2({ colorMode }) {
                   variant="scrollable"
                   value={selectedTab}
                   onChange={updateTab}
-                  fullWidth
                   orientation={deviceNotMobile ? "vertical" : "horizontal"}
                   allowScrollButtonsMobile
-                  centered
                 >
                   <Tab label={"Layout Settings"} wrapped value={"0"} />
                   <Tab label={"Job Settings"} wrapped value={"1"} />
                   <Tab label={"Custom Structures"} wrapped value={"2"} />
+                  <Tab label={"Blueprint Settings"} wrapped value={"3"} />
                 </TabList>
               </Box>
               <Box sx={{ width: "85%", padding: deviceNotMobile ? 2 : 0 }}>
@@ -69,6 +69,9 @@ function SettingsPageV2({ colorMode }) {
                 </TabPanel>
                 <TabPanel value={"2"}>
                   <CustomStructuresFrame />
+                </TabPanel>
+                <TabPanel value={"3"}>
+                  <BlueprintSettingsFrame />
                 </TabPanel>
               </Box>
             </Box>

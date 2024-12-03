@@ -649,5 +649,5 @@ export const REMOTE_CONFIG_DEFAULT_VALUES = {
   app_version_number: __APP_VERSION__,
   maintenance_mode: false,
   enable_upcoming_changes_page: false,
-  useSettingsV2: false,
+  useSettingsV2: true,
 };

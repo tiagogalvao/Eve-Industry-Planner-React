@@ -7,7 +7,8 @@ function RightSideMenuContent_JobPlanner({
   rightContentMenuContentID,
   updateRightContentMenuContentID,
   updateExpandRightContentMenu,
-  setSkeletonElementsToDisplay
+  setSkeletonElementsToDisplay,
+  pageRequiresDrawerToBeOpen,
 }) {
   switch (rightContentMenuContentID) {
     case 1:
@@ -17,6 +18,7 @@ function RightSideMenuContent_JobPlanner({
           contentID={rightContentMenuContentID}
           updateContentID={updateRightContentMenuContentID}
           setSkeletonElementsToDisplay={setSkeletonElementsToDisplay}
+          pageRequiresDrawerToBeOpen={pageRequiresDrawerToBeOpen}
         />
       );
 

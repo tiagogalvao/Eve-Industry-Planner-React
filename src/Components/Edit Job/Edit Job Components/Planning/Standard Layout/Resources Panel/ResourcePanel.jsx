@@ -11,7 +11,6 @@ import {
 import { useContext, useState } from "react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { MaterialRow } from "./materialRow";
-import { jobTypes } from "../../../../../../Context/defaultValues";
 import { useManageGroupJobs } from "../../../../../../Hooks/GroupHooks/useManageGroupJobs";
 import { useJobBuild } from "../../../../../../Hooks/useJobBuild";
 import {

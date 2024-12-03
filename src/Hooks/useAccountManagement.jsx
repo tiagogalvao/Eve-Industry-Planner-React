@@ -23,7 +23,10 @@ import {
   PersonalESIDataContext,
   SystemIndexContext,
 } from "../Context/EveDataContext";
-import { UserLoginUIContext } from "../Context/LayoutContext";
+import {
+  ApplicationSettingsContext,
+  UserLoginUIContext,
+} from "../Context/LayoutContext";
 import {
   apiJobsDefault,
   jobArrayDefault,
@@ -49,6 +52,7 @@ import { useUpdateCorporationState } from "./Account Management Hooks/Corporatio
 import { useHelperFunction } from "./GeneralHooks/useHelperFunctions";
 import getWorldData from "../Functions/EveESI/World/getWorldData";
 import getSystemIndexes from "../Functions/System Indexes/findSystemIndex";
+import ApplicationSettingsObject from "../Classes/applicationSettingsConstructor";
 
 export function useAccountManagement() {
   const { updateIsLoggedIn } = useContext(IsLoggedInContext);
@@ -56,7 +60,8 @@ export function useAccountManagement() {
   const { updateGroupArray, updateJobArray } = useContext(JobArrayContext);
   const { updateUserJobSnapshot } = useContext(UserJobSnapshotContext);
   const { eveIDs, updateEveIDs } = useContext(EveIDsContext);
-  const { systemIndexData, updateSystemIndexData } = useContext(SystemIndexContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { setJobStatus } = useContext(JobStatusContext);
   const { updateActiveJob, updateActiveGroup } = useContext(ActiveJobContext);
   const { updateArchivedJobs } = useContext(ArchivedJobsContext);
@@ -100,6 +105,9 @@ export function useAccountManagement() {
   } = useContext(CorpEsiDataContext);
   const { updateUserUIData, updateLoginInProgressComplete } =
     useContext(UserLoginUIContext);
+  const { applicationSettings, updateApplicationSettings } = useContext(
+    ApplicationSettingsContext
+  );
 
   const checkClaims = httpsCallable(functions, "userClaims-updateCorpIDs");
   const { findParentUser, sendSnackbarNotificationInfo } = useHelperFunction();
@@ -186,6 +194,7 @@ export function useAccountManagement() {
     updateFirebaseListeners([]);
     updateIsLoggedIn(false);
     updateUsers(usersDefault);
+    updateApplicationSettings(new ApplicationSettingsObject());
     updateUserJobSnapshot(userJobSnapshotDefault);
     updateJobArray(jobArrayDefault);
     updateEveIDs(eveIDsDefault);
@@ -761,7 +770,10 @@ export function useAccountManagement() {
       )
     );
 
-    const retrievedSystemIndexes = await getSystemIndexes(requestIDs, systemIndexData);
+    const retrievedSystemIndexes = await getSystemIndexes(
+      requestIDs,
+      systemIndexData
+    );
 
     return retrievedSystemIndexes;
   };

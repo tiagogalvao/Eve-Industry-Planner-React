@@ -26,6 +26,7 @@ function AddNewJobContentPanel({
   rightContentMenuContentID,
   updateRightContentMenuContentID,
   setSkeletonElementsToDisplay,
+  pageRequiresDrawerToBeOpen,
 }) {
   const [itemIDsToAdd, updateItemIDsToAdd] = useState([]);
   const [addNewGroupOnBuild, updateAddNewGroupOnBuild] = useState(false);
@@ -41,7 +42,8 @@ function AddNewJobContentPanel({
     toggleRightDrawerColapse(
       1,
       rightContentMenuContentID,
-      hideRightContentPanel
+      hideRightContentPanel,
+      pageRequiresDrawerToBeOpen
     );
     updateRightContentMenuContentID(null);
     setSkeletonElementsToDisplay(0);

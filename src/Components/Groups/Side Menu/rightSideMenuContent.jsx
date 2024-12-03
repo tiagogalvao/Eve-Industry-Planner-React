@@ -9,6 +9,7 @@ function RightSideMenuContent_GroupPage({
   setSkeletonElementsToDisplay,
   highlightedItems,
   updateHighlightedItem,
+  pageRequiresDrawerToBeOpen
 }) {
   switch (rightContentMenuContentID) {
     case 1:
@@ -18,6 +19,7 @@ function RightSideMenuContent_GroupPage({
           contentID={rightContentMenuContentID}
           updateContentID={updateRightContentMenuContentID}
           setSkeletonElementsToDisplay={setSkeletonElementsToDisplay}
+          pageRequiresDrawerToBeOpen={pageRequiresDrawerToBeOpen}
         />
       );
     default:

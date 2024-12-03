@@ -12,16 +12,13 @@ export function MarkAsCompleteButton({ activeJob, setJobModified }) {
   const activeGroupObject = groupArray.find((i) => i.groupID === activeGroup);
 
   function toggleMarkJobAsComplete() {
-    const newGroupArray = [...groupArray];
-    const group = newGroupArray.find((i) => i.groupID === activeGroup);
-
-    const selectedMethod = group.areComplete.has(activeJob.jobID)
-      ? group.removeAreComplete
-      : group.addAreComplete;
+    const selectedMethod = activeGroupObject.areComplete.has(activeJob.jobID)
+      ? activeGroupObject.removeAreComplete
+      : activeGroupObject.addAreComplete;
 
     selectedMethod(activeJob.jobID);
 
-    updateGroupArray(newGroupArray);
+    updateGroupArray((prev) => [...prev]);
     setJobModified(true);
   }
 

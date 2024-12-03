@@ -16,18 +16,21 @@ import {
 } from "../../Context/EveDataContext";
 import recalculateInstallCostsWithNewData from "../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
 import { useInstallCostsCalc } from "../GeneralHooks/useInstallCostCalc";
+import { IsLoggedInContext } from "../../Context/AuthContext";
+import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
 
 function useBuildJobTree() {
   const { jobArray, updateJobArray, groupArray, updateGroupArray } =
     useContext(JobArrayContext);
+  const { isLoggedIn } = useContext(IsLoggedInContext);
   const { activeGroup } = useContext(ActiveJobContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
   const { evePrices, updateEvePrices } = useContext(EvePricesContext);
   const { systemIndexData, updateSystemIndexData } =
     useContext(SystemIndexContext);
   const { buildJob } = useJobBuild();
-    const { recalculateJobForNewTotal } = useRecalcuateJob();
-    const { calculateInstallCostFromJob } = useInstallCostsCalc();
+  const { recalculateJobForNewTotal } = useRecalcuateJob();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const { sendSnackbarNotificationSuccess } = useHelperFunction();
   const activeGroupObject = groupArray.find((i) => i.groupID === activeGroup);
 
@@ -109,6 +112,11 @@ function useBuildJobTree() {
       updateEvePrices((prev) => ({ ...prev, ...requestedMarketData }));
       updateSystemIndexData((prev) => ({ ...prev, ...requestedSystemIndexes }));
       updateGroupArray((prev) => [...prev]);
+      if (isLoggedIn) {
+        for (let job of newJobs) {
+          addNewJobToFirebase(job);
+        }
+      }
       sendSnackbarNotificationSuccess(`${newJobs.length} Jobs Added`);
     } catch (err) {
       console.error(err);

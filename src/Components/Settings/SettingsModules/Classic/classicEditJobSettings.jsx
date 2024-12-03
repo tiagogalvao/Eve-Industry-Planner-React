@@ -150,7 +150,9 @@ export function ClassicEditJobSettings({}) {
                         applicationSettings.toggleHideCompleteMaterials();
 
                       updateApplicationSettings(newApplicationSettings);
-                      uploadApplicationSettingsToFirebase(newApplicationSettings);
+                      uploadApplicationSettingsToFirebase(
+                        newApplicationSettings
+                      );
                     }}
                   />
                 }

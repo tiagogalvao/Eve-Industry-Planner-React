@@ -148,8 +148,8 @@ export function useHelperFunction() {
     }
   }
 
-  function checkDisplayTutorials() {
-    if (!isLoggedIn) return true;
+  function checkDisplayTutorials(pageDisplayPreference) {
+    if (!isLoggedIn || pageDisplayPreference) return true;
     const tutorialsAreHidden = applicationSettings.hideTutorials;
 
     if (tutorialsAreHidden) return false;

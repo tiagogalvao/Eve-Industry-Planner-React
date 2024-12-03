@@ -1,9 +1,9 @@
 import { usersDefault } from "../../Context/defaultValues";
 import { auth } from "../../firebase";
 
-export function getCurrentFirebaseUser() {
+function getCurrentFirebaseUser() {
   const user = auth.currentUser;
-  return user ? user.uid : usersDefault.accountID;
+  return user?.uid || usersDefault[0].accountID;
 }
 
 export default getCurrentFirebaseUser;

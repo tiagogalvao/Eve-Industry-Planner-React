@@ -5,7 +5,6 @@ import { getToken } from "firebase/app-check";
 export async function firebaseAuth(charObj) {
   const appCheckToken = await getToken(appCheck, true);
 
-  console.log(charObj);
   try {
     const fbTokenResponse = await fetch(
       `${import.meta.env.VITE_APIURL}/auth/gentoken`,

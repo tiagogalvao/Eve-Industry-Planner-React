@@ -19,7 +19,7 @@ import { useHelperFunction } from "./useHelperFunctions";
 import useCheckGlobalAppVersion from "./useCheckGlobalAppVersion";
 import getWorldData from "../../Functions/EveESI/World/getWorldData";
 import refreshMarketData from "../../Functions/MarketData/refreshMarketData";
-import refreshSystemIndexes from "../../Functions/System Indexes/refreshSystemInde";
+import refreshSystemIndexes from "../../Functions/System Indexes/refreshSystemIndex";
 
 export function useRefreshApiData() {
   const { users } = useContext(UsersContext);
@@ -67,7 +67,7 @@ export function useRefreshApiData() {
     await storeESIData(esiObjectsArray);
     updateCorporationObject(esiObjectsArray);
     const itemPricePromise = refreshMarketData(evePrices);
-    const systemIndexPromise = refreshSystemIndexes();
+    const systemIndexPromise = refreshSystemIndexes(eveIDs);
     const newAPIArray = buildApiArray(users, esiObjectsArray);
 
     for (let esiObject of esiObjectsArray) {
@@ -80,7 +80,7 @@ export function useRefreshApiData() {
         esiCorpMOrders,
         esiCorpHistMOrders,
       } = esiObject;
-      const user = users.find((i) => i.CharacterHash === i.owner);
+      const user = users.find((i) => i.CharacterHash === esiObject.owner);
 
       [...esiJobs, ...esiCorpJobs].forEach(({ facility_id }) => {
         if (!facility_id) return;

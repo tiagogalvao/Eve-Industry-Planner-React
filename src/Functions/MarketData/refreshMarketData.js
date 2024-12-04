@@ -1,5 +1,6 @@
 import convertMarketDataResponseToObject from "./convertResponse";
 import doesMarketItemRequireRefresh from "./refreshPeriod";
+import splitMarketDataRequestIntoChuncks from "./requestChunks";
 
 async function refreshMarketData(evePricesObject) {
   const outdatedPriceIDSet = new Set();

@@ -28,7 +28,7 @@ export function useActiveSlotTotals() {
     const userIndJobs =
       esiIndJobs.find((i) => i.user === CharacterHash)?.data || [];
     const userCorpIndJobs =
-      Object.entries(corpEsiIndJobs.get(corporation_id))
+      Object.entries(corpEsiIndJobs.get(corporation_id) || [])
         .filter(([jobId, job]) => job.installer_id === CharacterID)
         .map(([jobId, job]) => job) || [];
     const userSkills =

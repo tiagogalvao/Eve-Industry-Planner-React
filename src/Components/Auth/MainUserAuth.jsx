@@ -18,9 +18,10 @@ import { Buffer } from "buffer";
 import useCheckGlobalAppVersion from "../../Hooks/GeneralHooks/useCheckGlobalAppVersion";
 import User from "../../Classes/usersConstructor";
 import buildNewUserData from "../../Functions/Firebase/buildNewUserAccount";
+import { useNavigate } from "react-router-dom";
 
 export function login() {
-  const state = "/";
+  const state = "main";
   window.location.href = `https://login.eveonline.com/v2/oauth/authorize/?response_type=code&redirect_uri=${encodeURIComponent(
     import.meta.env.VITE_eveCallbackURL
   )}&client_id=${import.meta.env.VITE_eveClientID}&scope=${
@@ -43,72 +44,77 @@ export default function AuthMainUser() {
     userGroupDataListener,
   } = useFirebase();
   const analytics = getAnalytics();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    async function mainUserLoggin() {
-      const t = trace(performance, "MainUserLoginProcessFull");
-      t.start();
-      const authCode = window.location.search.match(/code=(\S*)&/)[1];
-      updateLoginInProgressComplete(false);
+    async function processOauthCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authCode = urlParams.get("code");
+      const mode = urlParams.get("state");
 
-      if (!useCheckGlobalAppVersion()) {
-        updateDialogData((prev) => ({
-          ...prev,
-          buttonText: "Close",
-          id: "OutdatedAppVersion",
-          open: true,
-          title: "Outdated App Version",
-          body: "A newer version of the application is available, refresh the page to begin using this.",
-        }));
-        return;
+      if (mode === "main") {
+        await mainUserLoggin(authCode, mode);
+      } else if (mode === "additional") {
+        await importAccount(authCode, mode);
       }
 
-      if (!authCode) return;
+      async function importAccount(authCode) {
+        localStorage.setItem("AdditionalUser", authCode);
+        window.close();
+      }
+      async function mainUserLoggin(authCode, mode) {
+        const t = trace(performance, "MainUserLoginProcessFull");
+        t.start();
 
-      const userObject = await EveSSOTokens(authCode, true);
-      let fbToken = await firebaseAuth(userObject);
-      await userObject.getPublicCharacterData();
-      updateUserUIData((prev) => ({
-        ...prev,
-        eveLoginComplete: true,
-        userArray: [
-          {
-            CharacterID: userObject.CharacterID,
-            CharacterName: userObject.CharacterName,
-          },
-        ],
-        returnState: decodeURIComponent(
-          window.location.search.match(/state=(\S*)/)[1]
-        ),
-      }));
-      await buildNewUserData(fbToken);
+        updateLoginInProgressComplete(false);
+        if (!useCheckGlobalAppVersion()) {
+          updateDialogData((prev) => ({
+            ...prev,
+            buttonText: "Close",
+            id: "OutdatedAppVersion",
+            open: true,
+            title: "Outdated App Version",
+            body: "A newer version of the application is available, refresh the page to begin using this.",
+          }));
+          return;
+        }
+        if (!authCode) return;
 
-      userMaindDocListener(fbToken, userObject);
-      userJobSnapshotListener(userObject);
-      userWatchlistListener(fbToken, userObject);
-      userGroupDataListener(userObject);
+        const userObject = await EveSSOTokens(authCode, true);
+        console.log(userObject);
+        let fbToken = await firebaseAuth(userObject);
+        await userObject.getPublicCharacterData();
+        updateUserUIData((prev) => ({
+          ...prev,
+          eveLoginComplete: true,
+          userArray: [
+            {
+              CharacterID: userObject.CharacterID,
+              CharacterName: userObject.CharacterName,
+            },
+          ],
+          returnState: decodeURIComponent(
+            window.location.search.match(/state=(\S*)/)[1]
+          ),
+        }));
+        await buildNewUserData(fbToken);
 
-      updateUserJobSnapshot([]);
-      updateJobArray([]);
-      updateIsLoggedIn(true);
-      updatePageLoad(false);
-      logEvent(analytics, "userSignIn", {
-        UID: fbToken.user.uid,
-      });
-      t.stop();
+        userMaindDocListener(fbToken, userObject);
+        userJobSnapshotListener(userObject);
+        userWatchlistListener(fbToken, userObject);
+        userGroupDataListener(userObject);
+
+        updateUserJobSnapshot([]);
+        updateJobArray([]);
+        updateIsLoggedIn(true);
+        updatePageLoad(false);
+        logEvent(analytics, "userSignIn", {
+          UID: fbToken.user.uid,
+        });
+        t.stop();
+      }
     }
-    async function importAccount() {
-      const authCode = window.location.search.match(/code=(\S*)&/)[1];
-      const userObject = await EveSSOTokens(authCode, false);
-      localStorage.setItem("AdditionalUser", JSON.stringify(userObject));
-      localStorage.setItem("AddAccountComplete", true);
-      window.close();
-    }
-    if (!isLoggedIn && localStorage.getItem("AddAccount")) {
-      importAccount();
-    } else {
-      mainUserLoggin();
-    }
+    processOauthCallback();
   }, []);
 
   return <UserLogInUI />;

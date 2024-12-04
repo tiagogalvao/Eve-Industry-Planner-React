@@ -74,7 +74,7 @@ function addNewCorporation(esiObject) {
         .map((asset) => asset.location_id)
     ),
   ];
-  console.log(officeLocations);
+
   return {
     alliance_id: esiCorpPublicInfo.alliance_id || null,
     name: esiCorpPublicInfo.name,

@@ -44,8 +44,7 @@ function AvailableJobEntry({
   parentChildToEdit,
   updateParentChildToEdit,
 }) {
-  const { Add_RemovePendingChildJobs, sendSnackbarNotificationSuccess } =
-    useHelperFunction();
+  const { sendSnackbarNotificationSuccess } = useHelperFunction();
   return (
     <Grid
       container
@@ -83,19 +82,21 @@ function AvailableJobEntry({
           size="small"
           color="primary"
           onClick={() => {
-            const { newChildJobstoAdd, newChildJobsToRemove } =
-              Add_RemovePendingChildJobs(
-                parentChildToEdit.childJobs[material.typeID],
-                job.jobID,
-                true
-              );
             updateParentChildToEdit((prev) => ({
               ...prev,
               childJobs: {
+                ...prev.childJobs,
                 [material.typeID]: {
                   ...prev.childJobs[material.typeID],
-                  add: [...newChildJobstoAdd],
-                  remove: [...newChildJobsToRemove],
+                  add: [
+                    ...new Set([
+                      ...(prev.childJobs[material.typeID]?.add || []),
+                      job.jobID,
+                    ]),
+                  ],
+                  remove: (
+                    prev.childJobs[material.typeID]?.remove || []
+                  ).filter((jobID) => jobID !== job.jobID),
                 },
               },
             }));

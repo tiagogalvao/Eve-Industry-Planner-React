@@ -18,6 +18,7 @@ import { grey, yellow } from "@mui/material/colors";
 import { useOpenGroup } from "../../../../Hooks/GroupHooks/useOpenGroup";
 import { useGroupManagement } from "../../../../Hooks/useGroupManagement";
 import GLOBAL_CONFIG from "../../../../global-config-app";
+import { useNavigate } from "react-router-dom";
 
 export function CompactGroupJobCard({ group }) {
   const { multiSelectJobPlanner, updateMultiSelectJobPlanner } = useContext(
@@ -37,6 +38,7 @@ export function CompactGroupJobCard({ group }) {
       isDragging: !!monitor.isDragging(),
     }),
   }));
+  const navigate = useNavigate();
   const { PRIMARY_THEME } = GLOBAL_CONFIG;
 
   const groupCardChecked = useMemo(
@@ -48,16 +50,26 @@ export function CompactGroupJobCard({ group }) {
     <Card
       ref={drag}
       square
-      sx={{
-        marginTop: "5px",
-        marginBottom: "5px",
-        cursor: "grab",
-        backgroundColor: (theme) =>
+      sx={(theme) => {
+        const isDarkMode = theme.palette.mode === PRIMARY_THEME;
+        const backgroundColor =
           groupCardChecked || isDragging
-            ? theme.palette.mode !== "dark"
-              ? grey[300]
-              : grey[900]
-            : "none",
+            ? isDarkMode
+              ? grey[900]
+              : grey[300]
+            : undefined;
+        const borderColor = isDarkMode ? grey[700] : grey[400];
+        return {
+          marginTop: "5px",
+          marginBottom: "5px",
+          cursor: "grab",
+          backgroundColor,
+          transition: "border 0.3s ease",
+          border: `2px solid transparent`,
+          "&:hover": {
+            border: `2px solid ${borderColor}`,
+          },
+        };
       }}
     >
       <Grid container item xs={12}>
@@ -91,10 +103,7 @@ export function CompactGroupJobCard({ group }) {
         <Grid container item xs={3} sm={1} align="center" alignItems="center">
           <Button
             color="primary"
-            onClick={() => {
-              openGroup(group.groupID);
-              updateEditGroupTrigger((prev) => !prev);
-            }}
+            onClick={() => navigate(`/group/${group.groupID}`)}
           >
             View
           </Button>
@@ -106,6 +115,9 @@ export function CompactGroupJobCard({ group }) {
                 theme.palette.mode === PRIMARY_THEME
                   ? theme.palette.primary.main
                   : theme.palette.secondary.main,
+              "&:Hover": {
+                color: "error.main",
+              },
             }}
             onClick={() => {
               deleteGroupWithoutJobs(group.groupID);
@@ -118,10 +130,10 @@ export function CompactGroupJobCard({ group }) {
           item
           xs={12}
           sx={{
-            height: "1px",
+            height: "2px",
             background: (theme) =>
               theme.palette.mode === PRIMARY_THEME
-                ? `linear-gradient(to right, ${yellow[600]} 30%, ${grey[800]} 60%)`
+                ? `linear-gradient(to right, ${yellow[600]} 30%, ${grey[900]} 60%)`
                 : `linear-gradient(to right, ${yellow[600]} 20%, white 60%)`,
           }}
         />

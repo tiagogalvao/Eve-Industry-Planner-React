@@ -1,12 +1,14 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import {
   Autocomplete,
   Avatar,
   Box,
   Button,
   Chip,
+  FormControlLabel,
   Grid,
   Paper,
+  Switch,
   TextField,
   Typography,
   useMediaQuery,
@@ -17,35 +19,38 @@ import fullItemList from "../../../../../RawData/fullItemList.json";
 import uuid from "react-uuid";
 import useBuildNewJobs from "../../../../../Hooks/JobHooks/useBuildNewJobs";
 import useRightContentDrawer from "../../../../SideMenu/Hooks/rightContentMenuHooks";
-import AddShipFittingPanel from "./FittingImport/addFittingJobs";
-import { DataExchangeContext } from "../../../../../Context/LayoutContext";
+import AddShipFittingPanel from "../../../../SideMenu/Shared Panels/Add New Job/addFittingJobs";
 
 function AddNewJobContentPanel({
   hideRightContentPanel,
   rightContentMenuContentID,
   updateRightContentMenuContentID,
+  setSkeletonElementsToDisplay,
+  pageRequiresDrawerToBeOpen,
 }) {
   const [itemIDsToAdd, updateItemIDsToAdd] = useState([]);
-  const { updateDataExchange } = useContext(DataExchangeContext);
+  const [addNewGroupOnBuild, updateAddNewGroupOnBuild] = useState(false);
   const { addNewJobsToPlanner } = useBuildNewJobs();
   const { toggleRightDrawerColapse } = useRightContentDrawer();
 
   const deviceNotMobile = useMediaQuery((theme) => theme.breakpoints.up("sm"));
 
   async function addJobs() {
-    updateDataExchange(true);
+    setSkeletonElementsToDisplay(addNewGroupOnBuild ? 1 : itemIDsToAdd.length);
     await addNewJobsToPlanner(itemIDsToAdd);
     updateItemIDsToAdd([]);
     toggleRightDrawerColapse(
       1,
       rightContentMenuContentID,
-      hideRightContentPanel
+      hideRightContentPanel,
+      pageRequiresDrawerToBeOpen
     );
     updateRightContentMenuContentID(null);
-    updateDataExchange(false);
+    setSkeletonElementsToDisplay(0);
   }
 
   function addItemToSelection(inputID) {
+    if (!inputID) return;
     const newItemsToAdd = [...itemIDsToAdd];
 
     const existingObject = newItemsToAdd.find((i) => i.itemID === inputID);
@@ -56,10 +61,20 @@ function AddNewJobContentPanel({
       newItemsToAdd.push({
         itemID: inputID,
         itemQty: 1,
+        addNewGroup: addNewGroupOnBuild,
       });
     }
 
     updateItemIDsToAdd(newItemsToAdd);
+  }
+
+  function toggleAddNewGroup() {
+    const newItemsToAdd = [...itemIDsToAdd];
+
+    newItemsToAdd.forEach((obj) => (obj.addNewGroup = !addNewGroupOnBuild));
+
+    updateItemIDsToAdd(newItemsToAdd);
+    updateAddNewGroupOnBuild((prev) => !prev);
   }
 
   const deviceBasedWidth = deviceNotMobile ? "100%" : "60%";
@@ -135,6 +150,20 @@ function AddNewJobContentPanel({
                 >
                   Clear
                 </Button>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      color="primary"
+                      size="small"
+                      checked={addNewGroupOnBuild}
+                      onChange={toggleAddNewGroup}
+                    />
+                  }
+                  label={
+                    <Typography variant="caption">Add To Group</Typography>
+                  }
+                  labelPlacement="end"
+                />
               </Grid>
             </Grid>
             <Grid container item xs={12} sx={{}}>
@@ -171,7 +200,10 @@ function AddNewJobContentPanel({
             </Grid>
           </Grid>
         </Box>
-        <AddShipFittingPanel updateItemIDsToAdd={updateItemIDsToAdd} />
+        <AddShipFittingPanel
+          updateItemIDsToAdd={updateItemIDsToAdd}
+          addNewGroupOnBuild={addNewGroupOnBuild}
+        />
       </Box>
     </Paper>
   );

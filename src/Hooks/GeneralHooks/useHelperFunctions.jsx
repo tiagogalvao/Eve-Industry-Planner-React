@@ -1,6 +1,5 @@
 import { useContext } from "react";
 import { EveIDsContext, EvePricesContext } from "../../Context/EveDataContext";
-import { jobTypes } from "../../Context/defaultValues";
 import { IsLoggedInContext, UsersContext } from "../../Context/AuthContext";
 import {
   ApplicationSettingsContext,
@@ -16,45 +15,6 @@ export function useHelperFunction() {
   const { setSnackbarData } = useContext(SnackBarDataContext);
   const { userDataFetch } = useContext(UserLoginUIContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
-
-  function Add_RemovePendingChildJobs(
-    materialChildJobObject,
-    reqiredID,
-    isAdd
-  ) {
-    const newChildJobstoAdd = new Set(materialChildJobObject?.add);
-    const newChildJobsToRemove = new Set(materialChildJobObject?.remove);
-
-    if (isAdd) {
-      newChildJobstoAdd.add(reqiredID);
-      newChildJobsToRemove.delete(reqiredID);
-    } else {
-      newChildJobstoAdd.delete(reqiredID);
-      newChildJobsToRemove.add(reqiredID);
-    }
-    return {
-      newChildJobstoAdd: [...newChildJobstoAdd],
-      newChildJobsToRemove: [...newChildJobsToRemove],
-    };
-  }
-
-  function Add_RemovePendingParentJobs(parentJobObject, reqiredID, isAdd) {
-    const newParentJobsToAdd = new Set(parentJobObject.add);
-    const newParentJobsToRemove = new Set(parentJobObject.remove);
-
-    if (isAdd) {
-      newParentJobsToAdd.add(reqiredID);
-      newParentJobsToRemove.delete(reqiredID);
-    } else {
-      newParentJobsToAdd.delete(reqiredID);
-      newParentJobsToRemove.add(reqiredID);
-    }
-
-    return {
-      newParentJobsToAdd: [...newParentJobsToAdd],
-      newParentJobsToRemove: [...newParentJobsToRemove],
-    };
-  }
 
   function findItemPriceObject(requestedTypeID, alternativePriceObject = {}) {
     const missingItemCost = {
@@ -89,16 +49,6 @@ export function useHelperFunction() {
       return eveIDs[requestedID] || null;
     }
     return eveIDs[requestedID] || alternativeItemLocation[requestedID] || null;
-  }
-
-  function isItemBuildable(inputJobType) {
-    if (
-      inputJobType === jobTypes.manufacturing ||
-      inputJobType === jobTypes.reaction
-    ) {
-      return true;
-    }
-    return false;
   }
 
   function findParentUser() {
@@ -198,8 +148,8 @@ export function useHelperFunction() {
     }
   }
 
-  function checkDisplayTutorials() {
-    if (!isLoggedIn) return true;
+  function checkDisplayTutorials(pageDisplayPreference) {
+    if (!isLoggedIn || pageDisplayPreference) return true;
     const tutorialsAreHidden = applicationSettings.hideTutorials;
 
     if (tutorialsAreHidden) return false;
@@ -259,39 +209,15 @@ export function useHelperFunction() {
     }));
   }
 
-  function getJobSetupCount(inputJob) {
-    return Object.values(inputJob.build.setup).length;
-  }
-
-  function getJobCountFromJob(inputJob) {
-    return Object.values(inputJob.build.setup).reduce((prev, { jobCount }) => {
-      return (prev += jobCount);
-    }, 0);
-  }
-
-  function getTotalCompleteMaterialsFromJob(inputJob) {
-    return inputJob.build.materials.reduce((prev, material) => {
-      if (material.purchaseComplete) {
-        return prev++;
-      }
-    }, 0);
-  }
-
   return {
-    Add_RemovePendingChildJobs,
-    Add_RemovePendingParentJobs,
     checkClipboardReadPermissions,
     checkDisplayTutorials,
     findItemPriceObject,
     findParentUser,
     findParentUserIndex,
     findUniverseItemObject,
-    getJobSetupCount,
-    getJobCountFromJob,
-    getTotalCompleteMaterialsFromJob,
     importAssetsFromClipboard_IconView,
     importMultibuyFromClipboard,
-    isItemBuildable,
     readTextFromClipboard,
     sendSnackbarNotificationSuccess,
     sendSnackbarNotificationError,

@@ -1,12 +1,12 @@
 import { useContext } from "react";
 import { Grid, Paper, Typography, Checkbox } from "@mui/material";
 import { IsLoggedInContext } from "../../../../Context/AuthContext";
-import { useFirebase } from "../../../../Hooks/useFirebase";
 import {
   ApplicationSettingsContext,
   UserLoginUIContext,
 } from "../../../../Context/LayoutContext";
 import GLOBAL_CONFIG from "../../../../global-config-app";
+import uploadApplicationSettingsToFirebase from "../../../../Functions/Firebase/uploadApplicationSettings";
 
 export function TutorialStep1({ activeJob }) {
   const { isLoggedIn } = useContext(IsLoggedInContext);
@@ -14,10 +14,9 @@ export function TutorialStep1({ activeJob }) {
     ApplicationSettingsContext
   );
   const { userDataFetch } = useContext(UserLoginUIContext);
-  const { uploadApplicationSettings } = useFirebase();
   const { PRIMARY_THEME } = GLOBAL_CONFIG;
 
-  if (applicationSettings.hideTutorials && userDataFetch) {
+  if (!applicationSettings.hideTutorials && userDataFetch) { 
     return (
       <Grid item xs={12}>
         <Paper
@@ -80,7 +79,7 @@ export function TutorialStep1({ activeJob }) {
                       const newApplicationSettings =
                         applicationSettings.toggleHideTutorials();
                       updateApplicationSettings(newApplicationSettings);
-                      uploadApplicationSettings(newApplicationSettings);
+                      uploadApplicationSettingsToFirebase(newApplicationSettings);
                     }}
                   />
                 </Grid>

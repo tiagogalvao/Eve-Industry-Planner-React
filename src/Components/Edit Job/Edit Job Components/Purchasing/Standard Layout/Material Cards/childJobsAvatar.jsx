@@ -1,14 +1,12 @@
 import { Avatar, Tooltip } from "@mui/material";
-import { useHelperFunction } from "../../../../../../Hooks/GeneralHooks/useHelperFunctions";
+import checkJobTypeIsBuildable from "../../../../../../Functions/Helper/checkJobTypeIsBuildable";
 
 export function ChildJobsAvatar_Purchasing({
   material,
   updateChildDialogTrigger,
   childJobs,
 }) {
-  const { isItemBuildable } = useHelperFunction();
-
-  const displayItem = isItemBuildable(material.jobType);
+  const displayItem = checkJobTypeIsBuildable(material.jobType);
 
   if (!displayItem) return null;
 

@@ -4,33 +4,39 @@ import {
   Avatar,
   Button,
   Chip,
-  CircularProgress,
+  FormControlLabel,
   Grid,
   Paper,
+  Switch,
   TextField,
+  Typography,
 } from "@mui/material";
 import itemList from "../../../RawData/searchIndex.json";
-import { DataExchangeContext } from "../../../Context/LayoutContext";
 import useBuildNewJobs from "../../../Hooks/JobHooks/useBuildNewJobs";
 import fullItemList from "../../../RawData/fullItemList.json";
 import uuid from "react-uuid";
 import ClearIcon from "@mui/icons-material/Clear";
+import { ActiveJobContext } from "../../../Context/JobContext";
 
-export function SearchBar({ updateRightContentMenuContentID }) {
-  const { updateDataExchange } = useContext(DataExchangeContext);
+export function SearchBar({
+  updateRightContentMenuContentID,
+  setSkeletonElementsToDisplay,
+}) {
+  const { activeGroup } = useContext(ActiveJobContext);
   const [itemIDsToAdd, updateItemIDsToAdd] = useState([]);
+  const [addNewGroupOnBuild, updateAddNewGroupOnBuild] = useState(false);
   const { addNewJobsToPlanner } = useBuildNewJobs();
 
   async function addJobs() {
-    updateDataExchange(true);
+    setSkeletonElementsToDisplay(addNewGroupOnBuild ? 1 : itemIDsToAdd.length);
     await addNewJobsToPlanner(itemIDsToAdd);
     updateItemIDsToAdd([]);
     updateRightContentMenuContentID(null);
-    updateDataExchange(false);
+    setSkeletonElementsToDisplay(0);
   }
 
   function addItemToSelection(inputID) {
-    const newItemsToAdd = [...itemIDsToAdd];
+    const newItemsToAdd = itemIDsToAdd.map((obj) => ({ ...obj }));
 
     const existingObject = newItemsToAdd.find((i) => i.itemID === inputID);
 
@@ -40,10 +46,21 @@ export function SearchBar({ updateRightContentMenuContentID }) {
       newItemsToAdd.push({
         itemID: inputID,
         itemQty: 1,
+        addNewGroup: addNewGroupOnBuild,
+        groupID: activeGroup,
       });
     }
 
     updateItemIDsToAdd(newItemsToAdd);
+  }
+
+  function toggleAddNewGroup() {
+    const newItemsToAdd = [...itemIDsToAdd];
+
+    newItemsToAdd.forEach((obj) => (obj.addNewGroup = !addNewGroupOnBuild));
+
+    updateItemIDsToAdd(newItemsToAdd);
+    updateAddNewGroupOnBuild((prev) => !prev);
   }
 
   return (
@@ -104,8 +121,22 @@ export function SearchBar({ updateRightContentMenuContentID }) {
             >
               Clear
             </Button>
+            {!activeGroup &&
+              <FormControlLabel
+                control={
+                  <Switch
+                    color="primary"
+                    size="small"
+                    checked={addNewGroupOnBuild}
+                    onChange={toggleAddNewGroup}
+                  />
+                }
+                label={<Typography variant="caption">Add To Group</Typography>}
+                labelPlacement="bottom"
+              />
+            }
           </Grid>
-          <Grid container item xs={12}>
+          <Grid container item xs={12} sx={{ marginTop: 2 }}>
             {itemIDsToAdd.map((itemObj) => {
               const itemName = fullItemList[itemObj.itemID]?.name;
               return (
@@ -137,15 +168,6 @@ export function SearchBar({ updateRightContentMenuContentID }) {
               );
             })}
           </Grid>
-          {/* <Grid
-            container
-            item
-            xs={1}
-            alignItems="center"
-            sx={{ paddingLeft: { xs: "5px", md: "20px" } }}
-          >
-            {DataExchange && <CircularProgress size="24px" edge="false" />}
-          </Grid> */}
         </Grid>
       </Grid>
     </Paper>

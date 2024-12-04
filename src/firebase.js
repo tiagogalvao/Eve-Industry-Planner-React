@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache } from "firebase/firestore";
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
@@ -26,10 +26,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+export const firestore = initializeFirestore(app, {
+  localCache: memoryLocalCache(),
+});
 
 export const auth = getAuth(app);
 
-export const firestore = getFirestore(app);
 export const functions = getFunctions(app, FIREBASE_FUNCTION_REGION);
 export const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_ReCaptchaKey),
@@ -44,5 +46,7 @@ if (import.meta.env.DEV) {
   remoteConfig.settings.minimumFetchIntervalMillis = 300000; //5mins
 }
 remoteConfig.defaultConfig = REMOTE_CONFIG_DEFAULT_VALUES;
-fetchAndActivate(remoteConfig);
+fetchAndActivate(remoteConfig).catch((error) => {
+  console.error("Error fetching and activating Remote Config: ", error);
+});
 export default app;

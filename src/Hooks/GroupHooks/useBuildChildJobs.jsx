@@ -1,69 +1,40 @@
 import { useContext } from "react";
 import { ActiveJobContext, JobArrayContext } from "../../Context/JobContext";
-import { useFindJobObject } from "../GeneralHooks/useFindJobObject";
-import {
-  IsLoggedInContext,
-  UserJobSnapshotContext,
-} from "../../Context/AuthContext";
+import { IsLoggedInContext } from "../../Context/AuthContext";
 import { jobTypes } from "../../Context/defaultValues";
 import { useJobBuild } from "../useJobBuild";
-import { useFirebase } from "../useFirebase";
 import { useRecalcuateJob } from "../GeneralHooks/useRecalculateJob";
 import { useHelperFunction } from "../GeneralHooks/useHelperFunctions";
+import { ApplicationSettingsContext } from "../../Context/LayoutContext";
+import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
+import updateJobInFirebase from "../../Functions/Firebase/updateJob";
+import findOrGetJobObject from "../../Functions/Helper/findJobObject";
+import checkJobTypeIsBuildable from "../../Functions/Helper/checkJobTypeIsBuildable";
 
 export function useBuildChildJobs() {
   const { jobArray, groupArray, updateJobArray, updateGroupArray } =
     useContext(JobArrayContext);
   const { activeGroup } = useContext(ActiveJobContext);
-  const { userJobSnapshot } = useContext(UserJobSnapshotContext);
   const { isLoggedIn } = useContext(IsLoggedInContext);
-  const { findJobData } = useFindJobObject();
+  const { applicationSettings } = useContext(ApplicationSettingsContext);
   const { buildJob } = useJobBuild();
   const { recalculateJobForNewTotal } = useRecalcuateJob();
-  const { addNewJob, uploadJob } = useFirebase();
   const { sendSnackbarNotificationSuccess } = useHelperFunction();
 
-  const buildChildJobs = async (inputJobIDs) => {
+  async function buildChildJobs(inputJobIDs) {
+    const newGroupArray = [...groupArray];
+    const groupObject = newGroupArray.find((i) => i.groupID === activeGroup);
+
     const existingGroupData = await calculateExistingTypeIDs();
     const { buildRequests, jobsToBeModified } = await calculateNeededJobs(
       inputJobIDs,
       existingGroupData
     );
-    let newJobData = await buildJob(buildRequests);
+    const newJobData = await buildJob(buildRequests);
 
     const newJobArray = await buildNewJobArray(newJobData, jobsToBeModified);
 
-    const groupJobs = newJobArray.filter((i) => i.groupID === activeGroup);
-
-    const { outputJobCount, materialIDs, jobTypeIDs, includedJobIDs } =
-      groupJobs.reduce(
-        (prev, job) => {
-          if (job.parentJob.length === 0) {
-            prev.outputJobCount++;
-          }
-          prev.materialIDs.add(job.itemID);
-          prev.jobTypeIDs.add(job.itemID);
-          prev.includedJobIDs.add(job.jobID);
-
-          job.build.materials.forEach((mat) => {
-            prev.materialIDs.add(mat.typeID);
-          });
-          return prev;
-        },
-        {
-          outputJobCount: 0,
-          materialIDs: new Set(),
-          jobTypeIDs: new Set(),
-          includedJobIDs: new Set(),
-        }
-      );
-    const newGroupArray = [...groupArray];
-    let groupToUpdate = newGroupArray.find((i) => i.groupID === activeGroup);
-
-    groupToUpdate.includedTypeIDs = [...jobTypeIDs];
-    groupToUpdate.includedJobIDs = [...includedJobIDs];
-    groupToUpdate.outputJobCount = outputJobCount;
-    groupToUpdate.materialIDs = [...materialIDs];
+    groupObject.addJobsToGroup(newJobData);
 
     updateGroupArray(newGroupArray);
     updateJobArray(newJobArray);
@@ -89,7 +60,7 @@ export function useBuildChildJobs() {
     if (jobsToBeModified.length === 0 && buildRequests.length === 0) {
       sendSnackbarNotificationSuccess(`Job Tree Complete`, 3);
     }
-  };
+  }
 
   async function calculateExistingTypeIDs() {
     const resultMap = new Map();
@@ -98,24 +69,18 @@ export function useBuildChildJobs() {
       (i) => i.groupID === activeGroup
     );
 
-    for (const jobID of selectedGroupObject.includedJobIDs) {
-      const job = await findJobData(
-        jobID,
-        userJobSnapshot,
-        jobArray,
-        groupArray,
-        "groupJob"
-      );
+    for (const jobID of [...selectedGroupObject.includedJobIDs]) {
+      const job = await findOrGetJobObject(jobID, jobArray);
 
       if (!job) {
         continue;
       }
 
       const childJobData = job.build.materials.reduce((output, material) => {
-        if (
-          material.jobType === jobTypes.manufacturing ||
-          material.jobType === jobTypes.reaction
-        ) {
+        if (applicationSettings.checkTypeIDisExempt(material.typeID)) {
+          return output;
+        }
+        if (checkJobTypeIsBuildable(material.jobType)) {
           output.push({
             itemID: material.typeID,
             name: material.name,
@@ -143,22 +108,16 @@ export function useBuildChildJobs() {
     let jobsToBeModified = new Map();
 
     for (const inputJobID of requestedJobIDs) {
-      const requestedJob = await findJobData(
-        inputJobID,
-        userJobSnapshot,
-        jobArray,
-        groupArray,
-        "groupJob"
-      );
+      const requestedJob = await findOrGetJobObject(inputJobID, jobArray);
       if (!requestedJob) {
         continue;
       }
 
       requestedJob.build.materials.forEach((material) => {
-        if (
-          material.jobType !== jobTypes.manufacturing &&
-          material.jobType !== jobTypes.reaction
-        ) {
+        if (!checkJobTypeIsBuildable(material.jobType)) {
+          return;
+        }
+        if (applicationSettings.checkTypeIDisExempt(material.typeID)) {
           return;
         }
 
@@ -223,7 +182,7 @@ export function useBuildChildJobs() {
     let newJobArray = [...jobArray, ...newJobData];
     if (isLoggedIn) {
       for (let job of newJobData) {
-        addNewJob(job);
+        await addNewJobToFirebase(job);
       }
     }
 
@@ -237,51 +196,51 @@ export function useBuildChildJobs() {
       }
       job.parentJob = [...new Set(job.parentJob, [...modifiedData.parentJobs])];
 
-      await recalculateJobForNewTotal(job, modifiedData.itemQty);
+      recalculateJobForNewTotal(job, modifiedData.itemQty);
 
       if (isLoggedIn) {
-        uploadJob(job);
+        updateJobInFirebase(job);
       }
     }
 
     return newJobArray;
   }
 
+  function addMaterialToBuild(material, activeGroupID, parentJobID) {
+    const newObject = {
+      name: material.name,
+      itemID: material.typeID,
+      itemQty: material.quantity,
+      parentJobs: new Set([parentJobID]),
+      childJobs: [],
+      groupID: activeGroupID,
+    };
+
+    return newObject;
+  }
+
+  function updateMaterialToBuild(material, existingBuildObject, parentJobID) {
+    existingBuildObject.parentJobs.add(parentJobID);
+    existingBuildObject.itemQty += material.quantity;
+
+    return existingBuildObject;
+  }
+
+  function linkNewJobsToParent(newJobs, jobArray) {
+    for (let { parentJob, jobID, itemID } of newJobs) {
+      for (let parentJobID of parentJob) {
+        let parentMatch = jobArray.find((i) => i.jobID === parentJobID);
+        if (!parentMatch) continue;
+
+        parentMatch.build.childJobs[itemID] = [
+          ...new Set([...parentMatch.build.childJobs[itemID], jobID]),
+        ];
+      }
+    }
+    return jobArray;
+  }
+
   return {
     buildChildJobs,
   };
-}
-
-function addMaterialToBuild(material, activeGroupID, parentJobID) {
-  const newObject = {
-    name: material.name,
-    itemID: material.typeID,
-    itemQty: material.quantity,
-    parentJobs: new Set([parentJobID]),
-    childJobs: [],
-    groupID: activeGroupID,
-  };
-
-  return newObject;
-}
-
-function updateMaterialToBuild(material, existingBuildObject, parentJobID) {
-  existingBuildObject.parentJobs.add(parentJobID);
-  existingBuildObject.itemQty += material.quantity;
-
-  return existingBuildObject;
-}
-
-function linkNewJobsToParent(newJobs, jobArray) {
-  for (let { parentJob, jobID, itemID } of newJobs) {
-    for (let parentJobID of parentJob) {
-      let parentMatch = jobArray.find((i) => i.jobID === parentJobID);
-      if (!parentMatch) continue;
-
-      parentMatch.build.childJobs[itemID] = [
-        ...new Set([...parentMatch.build.childJobs[itemID], jobID]),
-      ];
-    }
-  }
-  return jobArray;
 }

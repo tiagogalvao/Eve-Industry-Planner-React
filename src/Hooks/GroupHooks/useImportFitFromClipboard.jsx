@@ -2,28 +2,26 @@ import { useContext } from "react";
 import itemTypes from "../../RawData/searchIndex.json";
 import { ActiveJobContext, JobArrayContext } from "../../Context/JobContext";
 import { useJobBuild } from "../useJobBuild";
-import { useJobManagement } from "../useJobManagement";
 import { IsLoggedInContext } from "../../Context/AuthContext";
-import { useFirebase } from "../useFirebase";
-import { EvePricesContext } from "../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../Context/EveDataContext";
 import { useRecalcuateJob } from "../GeneralHooks/useRecalculateJob";
-import { useManageGroupJobs } from "./useManageGroupJobs";
-import { useHelperFunction } from "../GeneralHooks/useHelperFunctions";
+import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
+import getMissingESIData from "../../Functions/Shared/getMissingESIData";
+import recalculateInstallCostsWithNewData from "../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
 
 export function useImportFitFromClipboard() {
   const { activeGroup } = useContext(ActiveJobContext);
   const { jobArray, updateJobArray, groupArray, updateGroupArray } =
     useContext(JobArrayContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { isLoggedIn } = useContext(IsLoggedInContext);
   const { buildJob } = useJobBuild();
   const { recalculateJobForNewTotal } = useRecalcuateJob();
-  const { addMultipleJobsToGroup } = useManageGroupJobs();
-  const { generatePriceRequestFromJob } = useJobManagement();
-  const { addNewJob, getItemPrices } = useFirebase();
-  const { findParentUser } = useHelperFunction();
-
-  const parentUser = findParentUser();
 
   async function importFromClipboard() {
     const itemNameRegex = /^\[(?<itemName>.+),\s*(?<fittingName>.+)\]/g;
@@ -122,6 +120,7 @@ export function useImportFitFromClipboard() {
     if (!itemArray) return;
     let newPriceIDs = new Set();
     let jobsToSave = new Set();
+    const newGroupArray = [...groupArray];
 
     const buildRequests = convertImportedItemsToBuildRequests(itemArray);
 
@@ -130,7 +129,7 @@ export function useImportFitFromClipboard() {
     });
 
     const groupEntriesToModifiy = buildRequests.filter((entry) =>
-      activeGroupObject.includedTypeIDs.includes(entry.itemID)
+      activeGroupObject.includedTypeIDs.has(entry.itemID)
     );
     const itemsToBuild = buildRequests.filter(
       (entry) => !groupEntriesToModifiy.some((i) => i.itemID === entry.itemID)
@@ -141,7 +140,7 @@ export function useImportFitFromClipboard() {
     const newJobArray = [...jobArray, ...newJobData];
 
     for (const job of newJobData) {
-      newPriceIDs = new Set(newPriceIDs, generatePriceRequestFromJob(job));
+      newPriceIDs = new Set([...newPriceIDs, ...job.getMaterialIDs()]);
       jobsToSave.add(job.jobID);
 
       job.build.materials.forEach((material) => {
@@ -156,8 +155,6 @@ export function useImportFitFromClipboard() {
       });
     }
 
-    const itemPriceRequest = [getItemPrices([...newPriceIDs], parentUser)];
-
     for (const entry of groupEntriesToModifiy) {
       const job = newJobArray.find((i) => i.itemID === entry.itemID);
       if (!job) continue;
@@ -167,26 +164,34 @@ export function useImportFitFromClipboard() {
       jobsToSave.add(job.jobID);
     }
 
-    const newGroupArray = addMultipleJobsToGroup(
-      newJobData,
-      [...groupArray],
-      newJobArray
+    const matchedGroup = newGroupArray.find(
+      (i) => i.groupID === jobObject.groupID
     );
+    matchedGroup.addJobsToGroup(newJobs);
 
-    const itemPriceResult = await Promise.all(itemPriceRequest);
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData(newJobs, evePrices, systemIndexData);
+    
+      recalculateInstallCostsWithNewData(
+        newJobs,
+        calculateInstallCostFromJob,
+        requestedMarketData,
+        requestedSystemIndexes
+      );
 
     updateGroupArray(newGroupArray);
     updateJobArray(newJobArray);
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
     }));
+    updateSystemIndexData((prev) => ({ ...prev, ...requestedSystemIndexes }));
     if (isLoggedIn) {
-      jobsToSave.forEach((id) => {
+      for (let id of [...jobsToSave]) {
         let matchedJob = newJobArray.find((i) => i.jobID === id);
         if (!matchedJob) return;
-        addNewJob(matchedJob);
-      });
+        await addNewJobToFirebase(matchedJob);
+      }
     }
   };
 

@@ -24,7 +24,8 @@ import {
   useAddMaterialCostsToJob,
   useBuildMaterialPriceObject,
 } from "../../../../../../Hooks/JobHooks/useAddMaterialCosts";
-import { useFirebase } from "../../../../../../Hooks/useFirebase";
+import uploadApplicationSettingsToFirebase from "../../../../../../Functions/Firebase/uploadApplicationSettings";
+import Job from "../../../../../../Classes/jobConstructor";
 
 export function PurchasingDataPanel_EditJob({
   activeJob,
@@ -42,15 +43,11 @@ export function PurchasingDataPanel_EditJob({
   );
   const [orderSelect, updateOrderSelect] = useState(orderDisplay);
   const [marketSelect, updateMarketSelect] = useState(marketDisplay);
-  const {
-    getTotalCompleteMaterialsFromJob,
-    importMultibuyFromClipboard,
-    sendSnackbarNotificationError,
-  } = useHelperFunction();
-  const { uploadApplicationSettings } = useFirebase();
+  const { importMultibuyFromClipboard, sendSnackbarNotificationError } =
+    useHelperFunction();
   const { MARKET_OPTIONS } = GLOBAL_CONFIG;
-
-  const totalComplete = getTotalCompleteMaterialsFromJob(activeJob);
+  
+  const totalComplete = activeJob.totalCompletedMaterials();
 
   return (
     <Grid item xs={12}>
@@ -104,7 +101,9 @@ export function PurchasingDataPanel_EditJob({
                         applicationSettings.toggleHideCompleteMaterials();
 
                       updateApplicationSettings(newApplicationSettings);
-                      uploadApplicationSettings(newApplicationSettings);
+                      uploadApplicationSettingsToFirebase(
+                        newApplicationSettings
+                      );
                     }}
                   />
                 }
@@ -178,18 +177,10 @@ export function PurchasingDataPanel_EditJob({
                               activeJob,
                               materialPriceObjects
                             );
-
-                          updateActiveJob((prevObj) => ({
-                            ...prevObj,
-                            build: {
-                              ...prevObj.build,
-                              materials: newMaterialArray,
-                              costs: {
-                                ...prevObj.build.costs,
-                                totalPurchaseCost: newTotalPurchaseCost,
-                              },
-                            },
-                          }));
+                          activeJob.build.materials = newMaterialArray;
+                          activeJob.build.costs.totalPurchaseCost =
+                            newTotalPurchaseCost;
+                          updateActiveJob((prev) => new Job(prev));
                           setJobModified(true);
                         }}
                       >
@@ -209,13 +200,8 @@ export function PurchasingDataPanel_EditJob({
                   onChange={(e) => {
                     changeMarketDisplay(e.target.value);
                     updateMarketSelect(e.target.value);
-                    updateActiveJob((prev) => ({
-                      ...prev,
-                      layout: {
-                        ...prev.layout,
-                        localMarketDisplay: e.target.value,
-                      },
-                    }));
+                    activeJob.layout.localMarketDisplay = e.target.value;
+                    updateActiveJob((prev) => new Job(prev));
                   }}
                   sx={{
                     width: "90px",
@@ -239,13 +225,8 @@ export function PurchasingDataPanel_EditJob({
                   onChange={(e) => {
                     changeOrderDisplay(e.target.value);
                     updateOrderSelect(e.target.value);
-                    updateActiveJob((prev) => ({
-                      ...prev,
-                      layout: {
-                        ...prev.layout,
-                        localOrderDisplay: e.target.value,
-                      },
-                    }));
+                    activeJob.layout.localOrderDisplay = e.target.value;
+                    updateActiveJob((prev) => new Job(prev));
                   }}
                   sx={{
                     width: "120px",

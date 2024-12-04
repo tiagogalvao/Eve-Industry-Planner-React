@@ -18,15 +18,9 @@ import { UsersContext } from "../../../../../../Context/AuthContext";
 import rawSystemData from "../../../../../../RawData/systems.json";
 import { SystemIndexContext } from "../../../../../../Context/EveDataContext";
 import { ApplicationSettingsContext } from "../../../../../../Context/LayoutContext";
+import Job from "../../../../../../Classes/jobConstructor";
 
-export function JobSetupCard({
-  setupEntry,
-  activeJob,
-  updateActiveJob,
-  setJobModified,
-  setupToEdit,
-  updateSetupToEdit,
-}) {
+export function JobSetupCard({ setupEntry, activeJob, updateActiveJob }) {
   const { users } = useContext(UsersContext);
   const assignedCharacterName =
     users.find((i) => i.CharacterHash === setupEntry.selectedCharacter)
@@ -37,14 +31,9 @@ export function JobSetupCard({
       <Card elevation={3} square sx={{ minWidth: "100%" }}>
         <CardActionArea
           onClick={() => {
-            updateActiveJob((prev) => ({
-              ...prev,
-              layout: {
-                ...prev.layout,
-                setupToEdit: setupEntry.id,
-              },
-            }));
-            updateSetupToEdit(setupEntry.id);
+            activeJob.layout.setupToEdit = setupEntry.id;
+
+            updateActiveJob((prev) => new Job(prev));
           }}
         >
           <CardContent>
@@ -134,7 +123,7 @@ export function JobSetupCard({
               sx={{
                 height: "1px",
                 backgroundColor: (theme) =>
-                  setupEntry.id === setupToEdit
+                  setupEntry.id === activeJob.layout.setupToEdit
                     ? theme.palette[jobTypeMapping[setupEntry.jobType]].main
                     : null,
               }}

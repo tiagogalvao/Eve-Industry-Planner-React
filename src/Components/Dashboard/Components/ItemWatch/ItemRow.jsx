@@ -11,7 +11,10 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useContext, useState } from "react";
-import { EvePricesContext } from "../../../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../../../Context/EveDataContext";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ClearIcon from "@mui/icons-material/Clear";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -26,14 +29,17 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useJobBuild } from "../../../../Hooks/useJobBuild";
-import { useJobManagement } from "../../../../Hooks/useJobManagement";
 import { JobArrayContext } from "../../../../Context/JobContext";
 import { trace } from "firebase/performance";
 import { performance } from "../../../../firebase";
-import { useJobSnapshotManagement } from "../../../../Hooks/JobHooks/useJobSnapshots";
 import { useInstallCostsCalc } from "../../../../Hooks/GeneralHooks/useInstallCostCalc";
 import { useHelperFunction } from "../../../../Hooks/GeneralHooks/useHelperFunctions";
 import { ApplicationSettingsContext } from "../../../../Context/LayoutContext";
+import JobSnapshot from "../../../../Classes/jobSnapshotConstructor";
+import addNewJobToFirebase from "../../../../Functions/Firebase/addNewJob";
+import uploadJobSnapshotsToFirebase from "../../../../Functions/Firebase/uploadJobSnapshots";
+import getMissingESIData from "../../../../Functions/Shared/getMissingESIData";
+import recalculateInstallCostsWithNewData from "../../../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
 
 export function WatchListRow({
   item,
@@ -50,21 +56,16 @@ export function WatchListRow({
     UserJobSnapshotContext
   );
   const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
-  const {
-    addNewJob,
-    getItemPrices,
-    uploadUserJobSnapshot,
-    uploadUserWatchlist,
-  } = useFirebase();
+  const { uploadUserWatchlist } = useFirebase();
   const { checkAllowBuild, buildJob } = useJobBuild();
-  const { generatePriceRequestFromJob } = useJobManagement();
   const {
     findItemPriceObject,
     sendSnackbarNotificationSuccess,
     sendSnackbarNotificationError,
   } = useHelperFunction();
-  const { newJobSnapshot } = useJobSnapshotManagement();
   const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const analytics = getAnalytics();
   const t = trace(performance, "CreateJobProcessFull");
@@ -83,6 +84,7 @@ export function WatchListRow({
   async function handleAdd() {
     t.start();
     if (!checkAllowBuild) return;
+    const newSnapshotArray = [...userJobSnapshot];
 
     let newJob = await buildJob({
       itemID: item.typeID,
@@ -90,14 +92,12 @@ export function WatchListRow({
 
     if (!newJob) return;
 
-    const itemPricePromise = [
-      getItemPrices(generatePriceRequestFromJob(newJob), parentUser),
-    ];
+    const jobSnapshot = new JobSnapshot(newJob);
 
-    let newUserJobSnapshot = newJobSnapshot(newJob, [...userJobSnapshot]);
+    newSnapshotArray.push(jobSnapshot);
 
-    addNewJob(newJob);
-    uploadUserJobSnapshot(newUserJobSnapshot);
+    await addNewJobToFirebase(newJob);
+    await uploadJobSnapshotsToFirebase(newSnapshotArray);
     logEvent(analytics, "New Job", {
       loggedIn: true,
       UID: parentUser.accountID,
@@ -105,13 +105,26 @@ export function WatchListRow({
       itemID: newJob.itemID,
     });
 
-    const itemPriceResult = await Promise.all(itemPricePromise);
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData(newJob, evePrices, systemIndexData);
+    
+      recalculateInstallCostsWithNewData(
+        newJob,
+        calculateInstallCostFromJob,
+        requestedMarketData,
+        requestedSystemIndexes
+      );
 
-    updateUserJobSnapshot(newUserJobSnapshot);
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
     }));
+    updateSystemIndexData((prev) => ({
+      ...prev,
+      ...requestedSystemIndexes,
+    }));
+
+    updateUserJobSnapshot(newSnapshotArray);
     updateJobArray((prev) => [...prev, newJob]);
     sendSnackbarNotificationSuccess(`${newJob.name} Added`, 3);
     t.stop();
@@ -159,6 +172,12 @@ export function WatchListRow({
     };
   }, [evePrices]);
 
+  const isItemDataOutdated = !item?.buildData;
+
+  const isStructureMissing = !applicationSettings.getCustomStructureWithID(
+    item?.buildData?.customStructureID
+  );
+
   const calculatedCosts = buildCosts();
 
   return (
@@ -180,13 +199,17 @@ export function WatchListRow({
             alignItems="center"
             sx={{ display: "flex" }}
           >
-            {!item.buildData ? (
+            {isItemDataOutdated || isStructureMissing ? (
               <Tooltip
-                title="Outdated watchlist item, the values calculated may no longer be accurate. Edit this item or replace it to correct."
+                title={
+                  isItemDataOutdated
+                    ? "Outdated watchlist item, the values calculated may no longer be accurate. Edit this item or replace it to correct."
+                    : "The custom structure used to calculate the install costs is missing, Edit this item to update the structure."
+                }
                 arrow
                 placement="bottom"
               >
-                <Icon color="warning">
+                <Icon color={isItemDataOutdated ? "error" : "warning"}>
                   <WarningAmberIcon />
                 </Icon>
               </Tooltip>

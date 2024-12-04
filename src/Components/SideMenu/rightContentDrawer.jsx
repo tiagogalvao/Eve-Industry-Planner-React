@@ -6,11 +6,14 @@ function CollapseableContentDrawer_Right({
   DrawerContent,
   expandRightContentMenu,
   updateExpandRightContentMenu,
+  pageRequiresDrawerToBeOpen = false,
 }) {
   const { checkDisplayTutorials } = useHelperFunction();
 
   useEffect(() => {
-    updateExpandRightContentMenu(checkDisplayTutorials());
+    updateExpandRightContentMenu(
+      checkDisplayTutorials(pageRequiresDrawerToBeOpen)
+    );
   }, []);
   const deviceNotMobile = useMediaQuery((theme) => theme.breakpoints.up("sm"));
   const drawerWidth = expandRightContentMenu
@@ -47,7 +50,7 @@ function CollapseableContentDrawer_Right({
       >
         <Box
           sx={{
-            width:"100%",
+            width: "100%",
             overflow: "auto",
             display: "flex",
             flexDirection: "column",

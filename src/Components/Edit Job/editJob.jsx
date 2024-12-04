@@ -1,7 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ActiveJobContext, JobStatusContext } from "../../Context/JobContext";
-import { useJobManagement } from "../../Hooks/useJobManagement";
+import {
+  ActiveJobContext,
+  ArchivedJobsContext,
+  JobArrayContext,
+  JobStatusContext,
+} from "../../Context/JobContext";
 import {
   Avatar,
   Divider,
@@ -21,20 +25,36 @@ import { DeleteJobIcon } from "./deleteIcon";
 import { LinkedJobBadge } from "./Linked Job Badge";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import { useOpenEditJob } from "../../Hooks/JobHooks/useOpenEditJob";
 import { LoadingPage } from "../loadingPage";
 import { LayoutSelector_EditJob_Planning } from "./Edit Job Components/Planning/layoutSelector";
 import { LayoutSelector_EditJob_Purchasing } from "./Edit Job Components/Purchasing/layoutSelector";
 import { LayoutSelector_EditJob_Building } from "./Edit Job Components/Building/layoutSelector";
 import { LayoutSelector_EditJob_Complete } from "./Edit Job Components/Complete/LayoutSelector";
 import { LayoutSelector_EditJob_Selling } from "./Edit Job Components/Selling/LayoutSelector";
-import { ShoppingListDialog } from "../Job Planner/Dialogues/ShoppingList/ShoppingList";
+import { ShoppingListDialog } from "../Dialogues/Shopping List/ShoppingList";
 import { Header } from "../Header";
 import { Footer } from "../Footer/Footer";
+import Job from "../../Classes/jobConstructor";
+import useSubscribeToJobListeners from "./Edit Job Hooks/useSubscribeToJobListeners";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../Context/EveDataContext";
+import { IsLoggedInContext } from "../../Context/AuthContext";
+import { useFirebase } from "../../Hooks/useFirebase";
+import { useInstallCostsCalc } from "../../Hooks/GeneralHooks/useInstallCostCalc";
+import useSetupUnmountEventListeners from "../../Hooks/GeneralHooks/useSetupUnmountEventListeners";
+import getMissingESIData from "../../Functions/Shared/getMissingESIData";
 
 export default function EditJob_New({ colorMode }) {
+  const { jobArray } = useContext(JobArrayContext);
   const { jobStatus } = useContext(JobStatusContext);
-  const { activeJob: activeJobID } = useContext(ActiveJobContext);
+  const { updateActiveJob: updateActiveJobID } = useContext(ActiveJobContext);
+  const { IsLoggedIn } = useContext(IsLoggedInContext);
+  const { updateArchivedJobs } = useContext(ArchivedJobsContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const [activeJob, updateActiveJob] = useState(null);
   const [jobModified, setJobModified] = useState(false);
   const [temporaryChildJobs, updateTemporaryChildJobs] = useState({});
@@ -59,50 +79,81 @@ export default function EditJob_New({ colorMode }) {
     },
     childJobs: {},
   });
-  const { deepCopyJobObject } = useJobManagement();
-  const { openEditJob } = useOpenEditJob();
+  const [isLoading, setIsLoading] = useState(true);
+  const [jobArrayUpdated, setJobArrayUpdated] = useState(false);
+  const { getArchivedJobData } = useFirebase();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
   const navigate = useNavigate();
   const { jobID } = useParams();
   let backupJob = useRef(null);
 
+  useSubscribeToJobListeners(jobID, () => {
+    setJobArrayUpdated(true);
+  });
+  useSetupUnmountEventListeners();
+
   useEffect(() => {
-    async function openJobProcess() {
-      const matchedJob = await openEditJob(jobID);
+    async function setInitialState() {
+      if (!jobArrayUpdated || jobID === activeJob?.jobID) return;
+
+      const matchedJob = jobArray.find((i) => i.jobID === jobID);
+
       if (!matchedJob) {
+        console.error("Unable to find job document");
         navigate("/jobplanner");
         return;
       }
-      updateActiveJob(deepCopyJobObject(matchedJob));
-      backupJob.current = deepCopyJobObject(matchedJob);
+      try {
+        const linkedJobs = jobArray.filter(
+          (i) =>
+            i.jobID === jobID || matchedJob.getRelatedJobs().includes(i.jobID)
+        );
+        if (IsLoggedIn) {
+          const newArchivedJobsArray = await getArchivedJobData(jobID);
+          updateArchivedJobs(newArchivedJobsArray);
+        }
+        const { requestedMarketData, requestedSystemIndexes } =
+          await getMissingESIData(linkedJobs, evePrices, systemIndexData);
+
+        for (let setup of Object.values(matchedJob.build.setup)) {
+          setup.estimatedInstallCost = calculateInstallCostFromJob(
+            setup,
+            requestedMarketData,
+            requestedSystemIndexes
+          );
+        }
+
+        updateEvePrices((prev) => ({
+          ...prev,
+          ...requestedMarketData,
+        }));
+        updateSystemIndexData((prev) => ({
+          ...prev,
+          ...requestedSystemIndexes,
+        }));
+        backupJob.current = new Job(matchedJob);
+        updateActiveJob(matchedJob);
+        updateActiveJobID(matchedJob.jobID);
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error importing job data:", err);
+        navigate("/jobplanner");
+      }
     }
-    openJobProcess();
-  }, [activeJobID]);
 
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
+    if (jobArrayUpdated && jobArray.some((job) => job.jobID === jobID)) {
+      setInitialState();
+    }
+  }, [jobArrayUpdated, jobArray, jobID]);
 
   function stepBack() {
-    updateActiveJob((prevState) => ({
-      ...prevState,
-      jobStatus: prevState.jobStatus - 1,
-    }));
+    activeJob.stepBackward();
+    updateActiveJob((prev) => new Job(prev));
     setJobModified(true);
   }
   function stepForward() {
-    updateActiveJob((prevState) => ({
-      ...prevState,
-      jobStatus: prevState.jobStatus + 1,
-    }));
+    activeJob.stepForward();
+    updateActiveJob((prev) => new Job(prev));
     setJobModified(true);
   }
 
@@ -178,7 +229,7 @@ export default function EditJob_New({ colorMode }) {
     }
   }
 
-  if (!activeJob) return <LoadingPage />;
+  if (isLoading) return <LoadingPage />;
 
   return (
     <Grid container direction={"column"}>
@@ -187,7 +238,7 @@ export default function EditJob_New({ colorMode }) {
         elevation={3}
         sx={{
           padding: "10px",
-          marginTop:10,
+          marginTop: 10,
           width: "100%",
         }}
         square
@@ -197,7 +248,7 @@ export default function EditJob_New({ colorMode }) {
           <Grid item xs={7} md={9} lg={10} />
           <Grid item xs={5} md={3} lg={2} align="right">
             <DeleteJobIcon activeJob={activeJob} />
-            <CloseJobIcon />
+            <CloseJobIcon backupJob={backupJob.current} />
             <SaveJobIcon
               activeJob={activeJob}
               jobModified={jobModified}

@@ -1,41 +1,41 @@
 import { Button } from "@mui/material";
 import { useManageGroupJobs } from "../../../../../../../Hooks/GroupHooks/useManageGroupJobs";
-import { useHelperFunction } from "../../../../../../../Hooks/GeneralHooks/useHelperFunctions";
 
 export function LinkExistingGroupJobButton_ChildJobPopoverFrame({
   activeJob,
-  updateActiveJob,
   material,
   setJobModified,
   parentChildToEdit,
   updateParentChildToEdit,
 }) {
-  const { findJobIDOfMaterialFromGroup } = useManageGroupJobs();
-  const { Add_RemovePendingChildJobs } = useHelperFunction();
+  const { findMaterialJobIDInGroup } = useManageGroupJobs();
 
   function linkToGroupJob() {
-    const matchedGroupJobID = findJobIDOfMaterialFromGroup(
+    const matchedGroupJobID = findMaterialJobIDInGroup(
       material.typeID,
       activeJob.groupID
     );
     if (!matchedGroupJobID) return;
 
-    const { newChildJobstoAdd, newChildJobsToRemove } =
-      Add_RemovePendingChildJobs(
-        parentChildToEdit.childJobs[material.typeID],
-        matchedGroupJobID,
-        true
-      );
     updateParentChildToEdit((prev) => ({
       ...prev,
       childJobs: {
+        ...prev.childJobs,
         [material.typeID]: {
           ...prev.childJobs[material.typeID],
-          add: newChildJobstoAdd,
-          remove: newChildJobsToRemove,
+          add: [
+            ...new Set([
+              ...(prev.childJobs[material.typeID]?.add || []),
+              matchedGroupJobID,
+            ]),
+          ],
+          remove: (prev.childJobs[material.typeID]?.remove || []).filter(
+            (jobID) => jobID !== matchedGroupJobID
+          ),
         },
       },
     }));
+
     setJobModified(true);
   }
 
@@ -48,36 +48,35 @@ export function LinkExistingGroupJobButton_ChildJobPopoverFrame({
 
 export function UnlinkExistingChildJobButton_ChildJobPopoverFrame({
   activeJob,
-  updateActiveJob,
   material,
   setJobModified,
   parentChildToEdit,
   updateParentChildToEdit,
 }) {
-  const { findJobIDOfMaterialFromGroup } = useManageGroupJobs();
-  const { Add_RemovePendingChildJobs } = useHelperFunction();
+  const { findMaterialJobIDInGroup } = useManageGroupJobs();
 
   function linkToGroupJob() {
-    const matchedGroupJobID = findJobIDOfMaterialFromGroup(
+    const matchedGroupJobID = findMaterialJobIDInGroup(
       material.typeID,
       activeJob.groupID
     );
     if (!matchedGroupJobID) return;
 
-    const { newChildJobstoAdd, newChildJobsToRemove } =
-      Add_RemovePendingChildJobs(
-        parentChildToEdit.childJobs[material.typeID],
-        matchedGroupJobID,
-        false
-      );
-
     updateParentChildToEdit((prev) => ({
       ...prev,
       childJobs: {
+        ...prev.childJobs,
         [material.typeID]: {
           ...prev.childJobs[material.typeID],
-          add: newChildJobstoAdd,
-          remove: newChildJobsToRemove,
+          add: (prev.childJobs[material.typeID]?.add || []).filter(
+            (jobID) => jobID !== matchedGroupJobID
+          ),
+          remove: [
+            ...new Set([
+              ...(prev.childJobs[material.typeID]?.remove || []),
+              matchedGroupJobID,
+            ]),
+          ],
         },
       },
     }));

@@ -1,64 +1,56 @@
-import { useContext, useMemo } from "react";
-import {
-  UserJobSnapshotContext,
-  UsersContext,
-} from "../../Context/AuthContext";
+import { useContext } from "react";
 import { EvePricesContext } from "../../Context/EveDataContext";
 import { ActiveJobContext, JobArrayContext } from "../../Context/JobContext";
 import {
   DataExchangeContext,
   LoadingTextContext,
 } from "../../Context/LayoutContext";
-import { useFindJobObject } from "../GeneralHooks/useFindJobObject";
-import { useFirebase } from "../useFirebase";
-import { useHelperFunction } from "../GeneralHooks/useHelperFunctions";
+import manageListenerRequests from "../../Functions/Firebase/manageListenerRequests";
+import {
+  FirebaseListenersContext,
+  IsLoggedInContext,
+} from "../../Context/AuthContext";
+import getMarketData from "../../Functions/MarketData/findMarketData";
 
 export function useOpenGroup() {
-  const { jobArray, groupArray, updateJobArray } = useContext(JobArrayContext);
+  const { groupArray, updateJobArray } = useContext(JobArrayContext);
   const { updateActiveGroup } = useContext(ActiveJobContext);
-  const { userJobSnapshot } = useContext(UserJobSnapshotContext);
   const { updateDataExchange } = useContext(DataExchangeContext);
-  const { users } = useContext(UsersContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
   const { updateLoadingText } = useContext(LoadingTextContext);
-  const { findJobData } = useFindJobObject();
-  const { getItemPrices } = useFirebase();
-  const { findParentUser } = useHelperFunction();
+  const { firebaseListeners, updateFirebaseListeners } = useContext(
+    FirebaseListenersContext
+  );
+  const { isLoggedIn } = useContext(IsLoggedInContext);
 
-  const parentUser = findParentUser();
-
-  const openGroup = async (inputGroupID) => {
-    let newJobArray = [...jobArray];
+  async function openGroup(inputGroupID) {
     let requestedGroup = groupArray.find((i) => i.groupID === inputGroupID);
     if (!requestedGroup) {
       return;
     }
     updateDataExchange((prev) => !prev);
 
-    const itemPriceRequest = [
-      getItemPrices(requestedGroup.materialIDs, parentUser),
-    ];
+    const itemPriceRequest = getMarketData(
+      requestedGroup.materialIDs,
+      evePrices
+    );
     updateLoadingText((prevObj) => ({
       ...prevObj,
       jobData: true,
       priceData: true,
     }));
-
-    for (let jobID of requestedGroup.includedJobIDs) {
-      await findJobData(
-        jobID,
-        userJobSnapshot,
-        newJobArray,
-        undefined,
-        "groupJob"
-      );
-    }
     updateLoadingText((prevObj) => ({
       ...prevObj,
       jobDataComp: true,
     }));
-
-    const itemPriceResult = await Promise.all(itemPriceRequest);
+    manageListenerRequests(
+      requestedGroup.includedJobIDs,
+      updateJobArray,
+      updateFirebaseListeners,
+      firebaseListeners,
+      isLoggedIn
+    );
+    const itemPriceResult = await itemPriceRequest;
     updateLoadingText((prevObj) => ({
       ...prevObj,
       jobData: true,
@@ -71,7 +63,6 @@ export function useOpenGroup() {
       ...itemPriceResult,
     }));
     updateActiveGroup(inputGroupID);
-    updateJobArray(newJobArray);
     updateDataExchange((prev) => !prev);
     updateLoadingText((prevObj) => ({
       ...prevObj,
@@ -80,7 +71,7 @@ export function useOpenGroup() {
       priceData: false,
       priceDataComp: false,
     }));
-  };
+  }
 
   return {
     openGroup,

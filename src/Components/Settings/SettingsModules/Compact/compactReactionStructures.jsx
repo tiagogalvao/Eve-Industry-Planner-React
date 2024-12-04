@@ -20,20 +20,20 @@ import { structureOptions } from "../../../../Context/defaultValues";
 import AddIcon from "@mui/icons-material/Add";
 import { useState } from "react";
 import { useContext } from "react";
-import { UsersContext } from "../../../../Context/AuthContext";
 import { Masonry } from "@mui/lab";
-import { useFirebase } from "../../../../Hooks/useFirebase";
 import { getAnalytics, logEvent } from "firebase/analytics";
 import systemIDS from "../../../../RawData/systems.json";
 import uuid from "react-uuid";
 import GLOBAL_CONFIG from "../../../../global-config-app";
-import { useSystemIndexFunctions } from "../../../../Hooks/GeneralHooks/useSystemIndexFunctions";
 import { SystemIndexContext } from "../../../../Context/EveDataContext";
 import { useHelperFunction } from "../../../../Hooks/GeneralHooks/useHelperFunctions";
 import { ApplicationSettingsContext } from "../../../../Context/LayoutContext";
+import uploadApplicationSettingsToFirebase from "../../../../Functions/Firebase/uploadApplicationSettings";
+import getSystemIndexes from "../../../../Functions/System Indexes/findSystemIndex";
 
 export function CompactReactionStrutures({ parentUserIndex }) {
-  const { updateSystemIndexData } = useContext(SystemIndexContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { applicationSettings, updateApplicationSettings } = useContext(
     ApplicationSettingsContext
   );
@@ -49,8 +49,6 @@ export function CompactReactionStrutures({ parentUserIndex }) {
   );
   const [taxValue, updateTaxValue] = useState("");
   const [systemIDValue, updateSystemIDValue] = useState("");
-  const { uploadApplicationSettings } = useFirebase();
-  const { findMissingSystemIndex } = useSystemIndexFunctions();
   const { findParentUser, sendSnackbarNotificationSuccess } =
     useHelperFunction();
   const analytics = getAnalytics();
@@ -71,12 +69,15 @@ export function CompactReactionStrutures({ parentUserIndex }) {
         applicationSettings.reactionStructures.length === 0 ? true : false,
     };
 
-    const systemIndexResults = await findMissingSystemIndex(systemIDValue);
+    const systemIndexResults = await getSystemIndexes(
+      systemIDValue,
+      systemIndexData
+    );
     const newApplicationSettings =
       applicationSettings.addCustomReactionStructure(newStructure);
 
     updateApplicationSettings(newApplicationSettings);
-    uploadApplicationSettings(newApplicationSettings);
+    uploadApplicationSettingsToFirebase(newApplicationSettings);
     updateSystemIndexData((prev) => ({ ...prev, ...systemIndexResults }));
     logEvent(analytics, "Add Reaction Structure", {
       UID: parentUser.accountID,
@@ -421,7 +422,9 @@ export function CompactReactionStrutures({ parentUserIndex }) {
                                   entry.id
                                 );
                               updateApplicationSettings(newApplicationSettings);
-                              uploadApplicationSettings(newApplicationSettings);
+                              uploadApplicationSettingsToFirebase(
+                                newApplicationSettings
+                              );
                             }}
                           >
                             Make Default
@@ -438,7 +441,9 @@ export function CompactReactionStrutures({ parentUserIndex }) {
                                   entry
                                 );
                               updateApplicationSettings(newApplicationSettings);
-                              uploadApplicationSettings(newApplicationSettings);
+                              uploadApplicationSettingsToFirebase(
+                                newApplicationSettings
+                              );
                               logEvent(analytics, "Remove Reaction Structure", {
                                 UID: parentUser.accountID,
                               });

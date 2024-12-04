@@ -18,6 +18,7 @@ import { useAccountManagement } from "../../Hooks/useAccountManagement";
 import { useCorporationObject } from "../../Hooks/Account Management Hooks/Corporation Objects/useCorporationObject";
 import { useHelperFunction } from "../../Hooks/GeneralHooks/useHelperFunctions";
 import { ApplicationSettingsContext } from "../../Context/LayoutContext";
+import getEveOauthToken from "../../Functions/EveESI/Character/getEveSSOToken";
 
 export function AdditionalAccounts({ parentUserIndex }) {
   const { users, updateUsers } = useContext(UsersContext);
@@ -26,41 +27,28 @@ export function AdditionalAccounts({ parentUserIndex }) {
     ApplicationSettingsContext
   );
   const { updateMainUserDoc } = useFirebase();
-  const {
-    characterAPICall,
-    checkUserClaims,
-    getCharacterInfo,
-    updateApiArray,
-    updateUserEsiData,
-  } = useAccountManagement();
+  const { checkUserClaims, updateApiArray, updateUserEsiData } =
+    useAccountManagement();
   const [skeletonVisible, toggleSkeleton] = useState(false);
   const { sendSnackbarNotificationSuccess, sendSnackbarNotificationError } =
     useHelperFunction();
   const { updateCorporationObject } = useCorporationObject();
   const analytics = getAnalytics();
-  let newUser = null;
 
   const handleAdd = async () => {
     toggleSkeleton(true);
-    localStorage.setItem("AddAccount", true);
-    localStorage.setItem("AddAccountComplete", false);
     window.open(
       `https://login.eveonline.com/v2/oauth/authorize/?response_type=code&redirect_uri=${encodeURIComponent(
         import.meta.env.VITE_eveCallbackURL
       )}&client_id=${import.meta.env.VITE_eveClientID}&scope=${
         import.meta.env.VITE_eveScope
-      }&state=/`,
+      }&state=additional`,
       "_blank"
     );
     window.addEventListener("storage", importNewAccount);
     setTimeout(() => {
-      if (
-        localStorage.getItem("AddAccount") === "true" ||
-        localStorage.getItem("AddAccountComplete") === "false"
-      ) {
+      if (!localStorage.getItem("AdditionalUser")) {
         window.removeEventListener("storage", importNewAccount);
-        localStorage.removeItem("AddAccount");
-        localStorage.removeItem("AddAccountComplete");
         toggleSkeleton(false);
       }
     }, 180000);
@@ -68,82 +56,73 @@ export function AdditionalAccounts({ parentUserIndex }) {
   };
 
   const importNewAccount = async () => {
-    if (
-      localStorage.getItem("AddAccountComplete") &&
-      localStorage.getItem("AdditionalUser") !== null &&
-      newUser === null
-    ) {
-      newUser = JSON.parse(localStorage.getItem("AdditionalUser"));
-      if (users.some((u) => u.CharacterHash === newUser.CharacterHash)) {
-        localStorage.removeItem("AddAccount");
-        localStorage.removeItem("AddAccountComplete");
-        localStorage.removeItem("AdditionalUser");
-        sendSnackbarNotificationError(`Duplicate Account`, 3);
-      } else {
-        let newUserArray = [...users];
-        let esiObjectsArray = [];
-        let newApiArray = [...apiJobs];
-        await getCharacterInfo(newUser);
-        esiObjectsArray.push(await characterAPICall(newUser));
-        localStorage.removeItem("AddAccount");
-        localStorage.removeItem("AddAccountComplete");
-        localStorage.removeItem("AdditionalUser");
-        newUserArray.push(newUser);
-        await checkUserClaims(newUserArray);
-        if (applicationSettings.cloudAccounts) {
-          newUserArray[parentUserIndex].accountRefreshTokens.push({
-            CharacterHash: newUser.CharacterHash,
-            rToken: newUser.rToken,
-          });
-        } else {
-          let accountArray = JSON.parse(
-            localStorage.getItem(
-              `${newUserArray[parentUserIndex].CharacterHash} AdditionalAccounts`
-            )
-          );
-          if (accountArray === null) {
-            accountArray = [];
-            accountArray.push({
-              CharacterHash: newUser.CharacterHash,
-              rToken: newUser.rToken,
-            });
-            localStorage.setItem(
-              `${newUserArray[parentUserIndex].CharacterHash} AdditionalAccounts`,
-              JSON.stringify(accountArray)
-            );
-          } else {
-            accountArray.push({
-              CharacterHash: newUser.CharacterHash,
-              rToken: newUser.rToken,
-            });
-            localStorage.setItem(
-              `${newUserArray[parentUserIndex].CharacterHash} AdditionalAccounts`,
-              JSON.stringify(accountArray)
-            );
-          }
-        }
-        updateUserEsiData(esiObjectsArray);
-        updateCorporationObject(esiObjectsArray);
-        newApiArray = updateApiArray(
-          newApiArray,
-          newUserArray,
-          esiObjectsArray
-        );
-        updateUsers(newUserArray);
-        updateApiJobs(newApiArray);
-        if (applicationSettings.cloudAccounts) {
-          updateMainUserDoc();
-        }
-        logEvent(analytics, "Link Character", {
-          UID: newUserArray[parentUserIndex].accountID,
-          newHash: newUser.CharacterHash,
-          cloudAccount: applicationSettings.cloudAccounts,
-        });
-        sendSnackbarNotificationSuccess(`${newUser.CharacterName} Imported`, 3);
-      }
-      window.removeEventListener("storage", importNewAccount);
+    if (!localStorage.getItem("AdditionalUser")) return;
+
+    const authCode = localStorage.getItem("AdditionalUser");
+    const newUser = await getEveOauthToken(authCode, false);
+
+    if (users.some((u) => u.CharacterHash === newUser.CharacterHash)) {
+      localStorage.removeItem("AdditionalUser");
+      sendSnackbarNotificationError(`Duplicate Account`, 3);
       toggleSkeleton(false);
+      return;
     }
+
+    let newUserArray = [...users];
+    let esiObjectsArray = [];
+    let newApiArray = [...apiJobs];
+    await newUser.getPublicCharacterData();
+    esiObjectsArray.push(await newUser.getCharacterESIData());
+    localStorage.removeItem("AdditionalUser");
+    newUserArray.push(newUser);
+    await checkUserClaims(newUserArray);
+    if (applicationSettings.cloudAccounts) {
+      newUserArray[parentUserIndex].accountRefreshTokens.push({
+        CharacterHash: newUser.CharacterHash,
+        rToken: newUser.rToken,
+      });
+    } else {
+      let accountArray = JSON.parse(
+        localStorage.getItem(
+          `${newUserArray[parentUserIndex].CharacterHash} AdditionalAccounts`
+        )
+      );
+      if (accountArray === null) {
+        accountArray = [];
+        accountArray.push({
+          CharacterHash: newUser.CharacterHash,
+          rToken: newUser.rToken,
+        });
+        localStorage.setItem(
+          `${newUserArray[parentUserIndex].CharacterHash} AdditionalAccounts`,
+          JSON.stringify(accountArray)
+        );
+      } else {
+        accountArray.push({
+          CharacterHash: newUser.CharacterHash,
+          rToken: newUser.rToken,
+        });
+        localStorage.setItem(
+          `${newUserArray[parentUserIndex].CharacterHash} AdditionalAccounts`,
+          JSON.stringify(accountArray)
+        );
+      }
+    }
+    updateUserEsiData(esiObjectsArray);
+    updateCorporationObject(esiObjectsArray);
+    newApiArray = updateApiArray(newApiArray, newUserArray, esiObjectsArray);
+    updateUsers(newUserArray);
+    updateApiJobs(newApiArray);
+    if (applicationSettings.cloudAccounts) {
+      updateMainUserDoc();
+    }
+    logEvent(analytics, "Link Character", {
+      UID: newUserArray[parentUserIndex].accountID,
+      newHash: newUser.CharacterHash,
+      cloudAccount: applicationSettings.cloudAccounts,
+    });
+    sendSnackbarNotificationSuccess(`${newUser.CharacterName} Imported`, 3);
+    toggleSkeleton(false);
   };
 
   return (
@@ -180,32 +159,11 @@ export function AdditionalAccounts({ parentUserIndex }) {
                         applicationSettings.toggleCloudAccounts();
                       const newUsersArray = [...users];
 
-                      if (e.target.checked) {
-                        let additionalAccounts = JSON.parse(
-                          localStorage.getItem(
-                            `${users[parentUserIndex].CharacterHash} AdditionalAccounts`
-                          )
-                        );
-                        if (additionalAccounts !== null) {
-                          newUsersArray[parentUserIndex].accountRefreshTokens =
-                            additionalAccounts;
-                        } else {
-                          newUsersArray[parentUserIndex].accountRefreshTokens =
-                            [];
-                        }
-                        localStorage.removeItem(
-                          `${users[parentUserIndex].CharacterHash} AdditionalAccounts`
-                        );
-                      } else {
-                        localStorage.setItem(
-                          `${users[parentUserIndex].CharacterHash} AdditionalAccounts`,
-                          JSON.stringify(
-                            newUsersArray[parentUserIndex].accountRefreshTokens
-                          )
-                        );
-                        newUsersArray[parentUserIndex].accountRefreshTokens =
-                          [];
-                      }
+                      const parentUser = newUsersArray.find(
+                        (i) => i.ParentUser
+                      );
+
+                      parentUser.toggleCloudAccounts(e.target.checked);
 
                       updateUsers(newUsersArray);
                       updateApplicationSettings(newAppliacationSettings);
@@ -246,15 +204,14 @@ export function AdditionalAccounts({ parentUserIndex }) {
         </Grid>
         <Grid container item xs={12} sx={{ marginTop: "20px" }}>
           {users.map((user) => {
-            if (!user.ParentUser) {
-              return (
-                <AccountEntry
-                  key={user.CharacterHash}
-                  user={user}
-                  parentUserIndex={parentUserIndex}
-                />
-              );
-            } else return null;
+            if (user.ParentUser) return null;
+            return (
+              <AccountEntry
+                key={user.CharacterHash}
+                user={user}
+                parentUserIndex={parentUserIndex}
+              />
+            );
           })}
           {skeletonVisible && (
             <Grid

@@ -2,16 +2,17 @@ import { useContext } from "react";
 import { useSetupManagement } from "../GeneralHooks/useSetupManagement";
 import { jobTypes } from "../../Context/defaultValues";
 import { SystemIndexContext } from "../../Context/EveDataContext";
-import { useSystemIndexFunctions } from "../GeneralHooks/useSystemIndexFunctions";
 import { useRecalcuateJob } from "../GeneralHooks/useRecalculateJob";
 import { ApplicationSettingsContext } from "../../Context/LayoutContext";
+import Job from "../../Classes/jobConstructor";
+import getSystemIndexes from "../../Functions/System Indexes/findSystemIndex";
 
 export function useUpdateSetupValue() {
-  const { updateSystemIndexData } = useContext(SystemIndexContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { applicationSettings } = useContext(ApplicationSettingsContext);
   const { recalculateSetup } = useSetupManagement();
   const { recalculateJobForNewTotal } = useRecalcuateJob();
-  const { findMissingSystemIndex } = useSystemIndexFunctions();
 
   async function recalcuateJobFromSetup(
     setupObject,
@@ -27,8 +28,9 @@ export function useUpdateSetupValue() {
     updateRequirementFields(setupObject, requirements);
     applyCustomStructure(setupObject, setupAttribute, setupAttributeValue);
 
-    const systemIndexResults = await findMissingSystemIndex(
-      setupObject.systemID
+    const systemIndexResults = await getSystemIndexes(
+      setupObject.systemID,
+      systemIndexData
     );
 
     const { jobSetups, newMaterialArray, newTotalProduced } = recalculateSetup(
@@ -37,19 +39,11 @@ export function useUpdateSetupValue() {
       undefined,
       systemIndexResults
     );
+    activeJob.build.setup = jobSetups;
+    activeJob.build.materials = newMaterialArray;
+    activeJob.build.products.totalQuantity = newTotalProduced;
 
-    updateActiveJob((prev) => ({
-      ...prev,
-      build: {
-        ...prev.build,
-        setup: jobSetups,
-        materials: newMaterialArray,
-        products: {
-          ...prev.build.products,
-          totalQuantity: newTotalProduced,
-        },
-      },
-    }));
+    updateActiveJob((prev) => new Job(prev));
     updateSystemIndexData((prev) => ({ ...prev, ...systemIndexResults }));
   }
 
@@ -91,11 +85,7 @@ export function useUpdateSetupValue() {
       const mainJob = newMaterialObject[mainTypeID];
 
       for (let material of mainJob.build.materials) {
-        if (
-          material.jobType !== jobTypes.manufacturing ||
-          material.jobType !== jobTypes.reaction
-        )
-          continue;
+        if (!checkJobTypeIsBuildable(material.jobType)) continue;
 
         const materialJob = newMaterialObject[material.typeID];
         recalculateJobForNewTotal(materialJob, material.quantity);

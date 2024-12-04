@@ -1,12 +1,15 @@
 import { useContext } from "react";
 import {
+  FirebaseListenersContext,
   IsLoggedInContext,
   UserJobSnapshotContext,
 } from "../../Context/AuthContext";
 import { JobArrayContext } from "../../Context/JobContext";
-import { useFirebase } from "../useFirebase";
-import { useFindJobObject } from "./useFindJobObject";
-import { useJobSnapshotManagement } from "../JobHooks/useJobSnapshots";
+import uploadGroupsToFirebase from "../../Functions/Firebase/uploadGroupData";
+import updateJobInFirebase from "../../Functions/Firebase/updateJob";
+import uploadJobSnapshotsToFirebase from "../../Functions/Firebase/uploadJobSnapshots";
+import findOrGetJobObject from "../../Functions/Helper/findJobObject";
+import manageListenerRequests from "../../Functions/Firebase/manageListenerRequests";
 
 export function useMoveItemsOnPlanner() {
   const { jobArray, updateJobArray, groupArray, updateGroupArray } =
@@ -15,12 +18,12 @@ export function useMoveItemsOnPlanner() {
     UserJobSnapshotContext
   );
   const { isLoggedIn } = useContext(IsLoggedInContext);
-  const { updateJobSnapshot } = useJobSnapshotManagement();
-  const { uploadGroups, uploadJob, uploadUserJobSnapshot } = useFirebase();
-  const { findJobData } = useFindJobObject();
+  const { firebaseListeners, updateFirebaseListeners } = useContext(
+    FirebaseListenersContext
+  );
 
-  const moveItemsOnPlanner = async (inputSnapIDs, direction) => {
-    let newJobArray = [...jobArray];
+  async function moveItemsOnPlanner(inputSnapIDs, direction) {
+    const retrievedJobs = [];
     let newUserJobSnapshot = [...userJobSnapshot];
     let newGroupArray = [...groupArray];
     let groupsModified = false;
@@ -30,7 +33,11 @@ export function useMoveItemsOnPlanner() {
 
     for (let inputSnapID of inputSnapIDs) {
       if (inputSnapID.includes("group")) {
-        await moveGroups(inputSnapID);
+        const selectedGroup = newGroupArray.find(
+          (i) => i.groupID === inputSnapID
+        );
+        selectedGroup.updateGroupStatus(direction);
+        groupsModified = true;
       } else {
         await moveJobs(inputSnapID);
       }
@@ -38,77 +45,65 @@ export function useMoveItemsOnPlanner() {
 
     if (isLoggedIn) {
       if (jobsModified) {
-        uploadUserJobSnapshot(newUserJobSnapshot);
+        await uploadJobSnapshotsToFirebase(newUserJobSnapshot);
       }
       if (groupsModified) {
-        uploadGroups(newGroupArray);
+        await uploadGroupsToFirebase(newGroupArray);
       }
     }
     if (jobsModified) {
+      manageListenerRequests(
+        retrievedJobs,
+        updateJobArray,
+        updateFirebaseListeners,
+        firebaseListeners,
+        isLoggedIn
+      );
       updateUserJobSnapshot(newUserJobSnapshot);
-      updateJobArray(newJobArray);
+      updateJobArray((prev) => {
+        const existingIDs = new Set(prev.map(({ jobID }) => jobID));
+        return [
+          ...prev,
+          ...retrievedJobs.filter(({ jobID }) => !existingIDs.has(jobID)),
+        ];
+      });
     }
     if (groupsModified) {
       updateGroupArray(newGroupArray);
     }
 
-    async function moveGroups(inputID) {
-      let inputGroup = await findJobData(
-        inputID,
-        undefined,
-        undefined,
-        newGroupArray
-      );
-
-      if (!inputGroup) return;
-
-      if (direction === "forward") {
-        if (inputGroup.groupStatus >= 3) return;
-        inputGroup.groupStatus++;
-      }
-      if (direction === "backward") {
-        if (inputGroup.groupStatus === 0) return;
-        inputGroup.groupStatus--;
-      }
-
-      newGroupArray = newGroupArray.filter((i) => i.groupID !== inputID);
-      newGroupArray.push(inputGroup);
-      groupsModified = true;
-      return;
-    }
-
-    async function moveJobs(inputSnapID) {
-      let inputJob = await findJobData(
-        inputSnapID,
-        newUserJobSnapshot,
-        newJobArray
+    async function moveJobs(inputJobID) {
+      let inputJob = await findOrGetJobObject(
+        inputJobID,
+        jobArray,
+        retrievedJobs
       );
       if (!inputJob) return;
 
       if (direction === "forward") {
         if (inputJob.jobStatus >= 4) return;
         if (inputJob.groupID !== null && inputJob.jobStatus >= 3) return;
-        inputJob.jobStatus++;
+        inputJob.stepForward();
       }
       if (direction === "backward") {
         if (inputJob.jobStatus === 0) return;
-        inputJob.jobStatus--;
+        inputJob.stepBackward();
       }
 
       if (!inputJob.groupID) {
-        newUserJobSnapshot = updateJobSnapshot(
-          inputJob,
-          newUserJobSnapshot
+        const matchedSnapshot = newUserJobSnapshot.find(
+          (i) => i.jobID === inputJob.jobID
         );
+        matchedSnapshot.setSnapshot(inputJob);
       }
       jobsModified = true;
       if (isLoggedIn) {
-        uploadJob(inputJob);
+        await updateJobInFirebase(inputJob);
       }
 
       return;
     }
-  };
+  }
 
   return {
     moveItemsOnPlanner,

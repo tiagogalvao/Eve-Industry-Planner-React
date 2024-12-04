@@ -5,6 +5,7 @@ import {
   UserLoginUIContext,
 } from "../../Context/LayoutContext";
 import { useRefreshUser } from "../useRefreshUser";
+import { auth } from "../../firebase";
 
 function useCheckUserAuthState() {
   const { updateUsers } = useContext(UsersContext);
@@ -36,6 +37,7 @@ function useCheckUserAuthState() {
         updateUserJobSnapshotDataFetch(true);
         updateUserWatchlistDataFetch(true);
         updateUserGroupsDataFetch(true);
+        await auth.signOut();
       } else {
         reloadMainUser(localStorage.getItem("Auth"));
       }

@@ -16,10 +16,7 @@ export async function firebaseAuth(charObj) {
           "Access-Token": charObj.aToken,
           appVersion: __APP_VERSION__,
         },
-        body: JSON.stringify({
-          UID: charObj.accountID,
-          CharacterHash: charObj.CharacterHash,
-        }),
+        body: JSON.stringify(charObj.getRefreshTokenObject()),
       }
     );
 

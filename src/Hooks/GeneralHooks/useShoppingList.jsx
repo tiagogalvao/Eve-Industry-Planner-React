@@ -1,65 +1,44 @@
 import { useContext } from "react";
 import { JobArrayContext } from "../../Context/JobContext";
 import {
+  FirebaseListenersContext,
   IsLoggedInContext,
-  UserJobSnapshotContext,
 } from "../../Context/AuthContext";
-import { useFindJobObject } from "./useFindJobObject";
 import { logEvent } from "firebase/analytics";
 import { analytics } from "../../firebase";
 import { useHelperFunction } from "./useHelperFunctions";
 import { ApplicationSettingsContext } from "../../Context/LayoutContext";
+import findOrGetJobObject from "../../Functions/Helper/findJobObject";
+import getCurrentFirebaseUser from "../../Functions/Firebase/currentFirebaseUser";
+import manageListenerRequests from "../../Functions/Firebase/manageListenerRequests";
+import retrieveJobIDsFromGroupObjects from "../../Functions/Helper/getJobIDsFromGroupObjects";
+import convertJobIDsToObjects from "../../Functions/Helper/convertJobIDsToObjects";
+import seperateGroupAndJobIDs from "../../Functions/Helper/seperateGroupAndJobIDs";
 
 export function useShoppingList() {
   const { jobArray, groupArray, updateJobArray } = useContext(JobArrayContext);
   const { isLoggedIn } = useContext(IsLoggedInContext);
-  const { userJobSnapshot, updateUserJobSnapshot } = useContext(
-    UserJobSnapshotContext
-  );
-  const { applicationSettings } = useContext(ApplicationSettingsContext);
-  const { findJobData } = useFindJobObject();
-  const {
-    findParentUser,
-    findItemPriceObject,
-    importAssetsFromClipboard_IconView,
-  } = useHelperFunction();
 
-  const parentUser = findParentUser();
+  const { applicationSettings } = useContext(ApplicationSettingsContext);
+  const { firebaseListeners, updateFirebaseListeners } = useContext(
+    FirebaseListenersContext
+  );
+  const { findItemPriceObject, importAssetsFromClipboard_IconView } =
+    useHelperFunction();
 
   async function buildShoppingList(inputJobIDs) {
-    let requestedJobObjects = [];
     let finalShoppingList = [];
-    let newUserJobSnapshot = [...userJobSnapshot];
-    let newJobArray = [...jobArray];
+    const retrievedJobs = [];
 
-    for (let inputID of inputJobIDs) {
-      if (inputID.includes("group")) {
-        let inputGroup = groupArray.find((i) => i.groupID === inputID);
-        if (!inputGroup) {
-          return;
-        }
+    const { groupIDs, jobIDs } = seperateGroupAndJobIDs(inputJobIDs);
 
-        for (let groupJobID of inputGroup.includedJobIDs) {
-          const requestedJob = await findJobData(
-            groupJobID,
-            newUserJobSnapshot,
-            newJobArray,
-            undefined,
-            "groupJob"
-          );
-          if (!requestedJob) continue;
-          requestedJobObjects.push(requestedJob);
-        }
-      } else {
-        const requestedJob = await findJobData(
-          inputID,
-          newUserJobSnapshot,
-          newJobArray
-        );
-        if (!requestedJob) continue;
-        requestedJobObjects.push(requestedJob);
-      }
-    }
+    const groupJobIDs = retrieveJobIDsFromGroupObjects(groupIDs, groupArray);
+
+    const requestedJobObjects = await convertJobIDsToObjects(
+      [...jobIDs, ...groupJobIDs],
+      jobArray,
+      retrievedJobs
+    );
 
     for (let inputJob of requestedJobObjects) {
       inputJob.build.materials.forEach((material) => {
@@ -95,12 +74,24 @@ export function useShoppingList() {
       return 0;
     });
     logEvent(analytics, "Build Shopping List", {
-      UID: parentUser.accountID,
+      UID: getCurrentFirebaseUser(),
       buildCount: finalShoppingList.length,
       loggedIn: isLoggedIn,
     });
-    updateJobArray(newJobArray);
-    updateUserJobSnapshot(newUserJobSnapshot);
+    manageListenerRequests(
+      retrievedJobs,
+      updateJobArray,
+      updateFirebaseListeners,
+      firebaseListeners,
+      isLoggedIn
+    );
+    updateJobArray((prev) => {
+      const existingIDs = new Set(prev.map(({ jobID }) => jobID));
+      return [
+        ...prev,
+        ...retrievedJobs.filter(({ jobID }) => !existingIDs.has(jobID)),
+      ];
+    });
     return finalShoppingList;
   }
 
@@ -162,12 +153,7 @@ export function useShoppingList() {
   }
 
   function generateTextToCopy(inputItems) {
-    let outputText = "";
-
-    inputItems.forEach((item) => {
-      outputText = outputText.concat(buildCopyText(item));
-    });
-    return outputText;
+    return inputItems.map((item) => buildCopyText(item)).join("");
   }
 
   function clearAssetQuantities(itemList) {
@@ -180,8 +166,10 @@ export function useShoppingList() {
     for (let item of newItemList) {
       const matchedItem = importedAssets[item.name];
       if (!matchedItem) continue;
-
       item.assetQuantity = matchedItem;
+      if (item.assetQuantity >= item.quantity) {
+        item.isVisible = false;
+      }
     }
     return newItemList;
   }

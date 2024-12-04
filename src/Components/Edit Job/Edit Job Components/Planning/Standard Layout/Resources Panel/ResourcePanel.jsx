@@ -10,40 +10,42 @@ import {
 } from "@mui/material";
 import { useContext, useState } from "react";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { SnackBarDataContext } from "../../../../../../Context/LayoutContext";
 import { MaterialRow } from "./materialRow";
-import { useJobManagement } from "../../../../../../Hooks/useJobManagement";
-import { jobTypes } from "../../../../../../Context/defaultValues";
 import { useManageGroupJobs } from "../../../../../../Hooks/GroupHooks/useManageGroupJobs";
 import { useJobBuild } from "../../../../../../Hooks/useJobBuild";
-import { useFirebase } from "../../../../../../Hooks/useFirebase";
-import { EvePricesContext } from "../../../../../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../../../../../Context/EveDataContext";
 import { useHelperFunction } from "../../../../../../Hooks/GeneralHooks/useHelperFunctions";
+import Job from "../../../../../../Classes/jobConstructor";
+import getMissingESIData from "../../../../../../Functions/Shared/getMissingESIData";
+import { useInstallCostsCalc } from "../../../../../../Hooks/GeneralHooks/useInstallCostCalc";
+import recalculateInstallCostsWithNewData from "../../../../../../Functions/Installation Costs/recalculateInstallCostsWithNewData";
+import checkJobTypeIsBuildable from "../../../../../../Functions/Helper/checkJobTypeIsBuildable";
 
 export function RawResourceList({
   activeJob,
   updateActiveJob,
-  setupToEdit,
   setJobModified,
   temporaryChildJobs,
   updateTemporaryChildJobs,
   parentChildToEdit,
   updateParentChildToEdit,
 }) {
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [displayType, updateDisplyType] = useState(
     activeJob.layout?.resourceDisplayType || "all"
   );
-  const { findJobIDOfMaterialFromGroup } = useManageGroupJobs();
+  const { findMaterialJobIDInGroup } = useManageGroupJobs();
   const { buildJob } = useJobBuild();
-  const { generatePriceRequestFromJob } = useJobManagement();
-  const { getItemPrices } = useFirebase();
-  const { findParentUser, writeTextToClipboard } = useHelperFunction();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
+  const { writeTextToClipboard } = useHelperFunction();
 
-  const parentUser = findParentUser();
-
-  if (!activeJob.build.setup[setupToEdit]) return null;
+  if (!activeJob.build.setup[activeJob.layout.setupToEdit]) return null;
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -59,7 +61,9 @@ export function RawResourceList({
   activeJob.build.materials.forEach((i) => {
     let quantityToUse =
       displayType === "active"
-        ? activeJob.build.setup[setupToEdit].materialCount[i.typeID].quantity
+        ? activeJob.build.setup[activeJob.layout.setupToEdit].materialCount[
+            i.typeID
+          ].quantity
         : i.quantity;
     copyText = copyText.concat(`${i.name} ${quantityToUse}\n`);
     volumeTotal += i.volume * quantityToUse;
@@ -96,13 +100,8 @@ export function RawResourceList({
             left: { xs: "10% ", sm: "30px" },
           }}
           onChange={(e) => {
-            updateActiveJob((prev) => ({
-              ...prev,
-              layout: {
-                ...prev.layout,
-                resourceDisplayType: e.target.value,
-              },
-            }));
+            activeJob.layout.resourceDisplayType = e.target.value;
+            updateActiveJob((prev) => new Job(prev));
             updateDisplyType(e.target.value);
           }}
         >
@@ -155,7 +154,6 @@ export function RawResourceList({
               <MaterialRow
                 key={material.typeID}
                 material={material}
-                setupToEdit={setupToEdit}
                 displayType={displayType}
                 activeJob={activeJob}
                 updateActiveJob={updateActiveJob}
@@ -196,8 +194,7 @@ export function RawResourceList({
     const newTempChildJobs = { ...temporaryChildJobs };
 
     activeJob.build.materials.forEach(({ jobType, typeID, quantity }) => {
-      if (jobType !== jobTypes.manufacturing && jobTypes !== jobTypes.reaction)
-        return;
+      if (!checkJobTypeIsBuildable(jobType)) return;
       const childJobLocation = activeJob.build.childJobs[typeID];
       const tempChildJob = temporaryChildJobs[typeID];
       if (groupJobCheck(typeID, activeJob.groupID, groupJobsToLink)) return;
@@ -213,7 +210,7 @@ export function RawResourceList({
 
       function groupJobCheck(requestedTypeID, requestedGroupID, outputMap) {
         if (!activeJob.groupID) return false;
-        const matchedGroupJobID = findJobIDOfMaterialFromGroup(
+        const matchedGroupJobID = findMaterialJobIDInGroup(
           requestedTypeID,
           requestedGroupID
         );
@@ -224,44 +221,47 @@ export function RawResourceList({
         return true;
       }
     });
-    if (buildRequestArray.length === 0) return;
+    console.log(buildRequestArray);
+    // if (buildRequestArray.length === 0) return;
     const newJobs = await buildJob(buildRequestArray);
 
-    const requiredItemPricesSet = newJobs.reduce((prev, job) => {
-      return new Set([...prev, ...generatePriceRequestFromJob(job)]);
-    }, new Set());
-
-    const itemPricePromise = [
-      getItemPrices([...requiredItemPricesSet], parentUser),
-    ];
-
-    activeJob.build.materials.forEach(({ jobType, typeID }) => {
-      if (jobType !== jobTypes.manufacturing && jobTypes !== jobTypes.reaction)
-        return;
-
-      if (groupJobsToLink.get(typeID)) {
-        if (newParentJobsToEdit_ChildJobs[typeID]) {
-          newParentJobsToEdit_ChildJobs[typeID].add.push(
-            groupJobsToLink.get(typeID)
-          );
-        } else {
-          newParentJobsToEdit_ChildJobs[typeID] = {
-            add: [groupJobsToLink.get(typeID)],
-            remove: [],
-          };
-        }
-        return;
+    for (let newJob of newJobs) {
+      const childLocation = newParentJobsToEdit_ChildJobs[newJob.itemID];
+      if (!childLocation) {
+        newParentJobsToEdit_ChildJobs[newJob.itemID] = {
+          add: [newJob.jobID],
+          remove: [],
+        };
+      } else {
+        childLocation.add.push(newJob.jobID);
       }
+      newTempChildJobs[newJob.itemID] = newJob;
+    }
 
-      const matchedJob = newJobs.find((i) => i.itemID === typeID);
+    groupJobsToLink.entries().forEach(([typeID, jobID]) => {
+      const childLocation = newParentJobsToEdit_ChildJobs[typeID];
 
-      if (!matchedJob) return;
-
-      newTempChildJobs[typeID] = matchedJob;
+      if (!childLocation) {
+        newParentJobsToEdit_ChildJobs[typeID] = {
+          add: [jobID],
+          remove: [],
+        };
+      } else {
+        childLocation.add.push(...jobIDArray);
+      }
     });
 
-    const itemPriceResult = await Promise.all(itemPricePromise);
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData(newJobs, evePrices, systemIndexData);
 
+    recalculateInstallCostsWithNewData(
+      newJobs,
+      calculateInstallCostFromJob,
+      requestedMarketData,
+      requestedSystemIndexes
+    );
+
+    console.log(newTempChildJobs);
     updateTemporaryChildJobs(newTempChildJobs);
     updateParentChildToEdit((prev) => ({
       ...prev,
@@ -270,8 +270,9 @@ export function RawResourceList({
 
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
     }));
+    updateSystemIndexData((prev) => ({ ...prev, ...requestedSystemIndexes }));
     setJobModified(true);
   }
 }

@@ -74,7 +74,7 @@ function addNewCorporation(esiObject) {
         .map((asset) => asset.location_id)
     ),
   ];
-  console.log(officeLocations);
+
   return {
     alliance_id: esiCorpPublicInfo.alliance_id || null,
     name: esiCorpPublicInfo.name,
@@ -128,6 +128,7 @@ function saveCorporationAssets(esiPublicInfo, esiAssets) {
       JSON.stringify(esiAssets)
     );
   } catch (err) {
+    console.warn('Corporation Assets data is too large to store in sessionStorage.');
     sessionStorage.setItem(`corpAssets_${esiPublicInfo.corporation_id}`, null);
   }
 }

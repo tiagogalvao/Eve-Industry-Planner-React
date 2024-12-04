@@ -20,6 +20,7 @@ import {
   CorpEsiDataContext,
   PersonalESIDataContext,
 } from "../../Context/EveDataContext";
+import VirtualisedRecipeSearch from "../../Styled Components/autocomplete/singleSelectScrollable";
 
 export function LibrarySearch({
   updateBlueprintData,
@@ -33,12 +34,45 @@ export function LibrarySearch({
   const [displayBPO, changeDisplayBPO] = useState(false);
   const [displayBPC, changeDisplayBPC] = useState(false);
   const { apiJobs } = useContext(ApiJobsContext);
-  const { users } = useContext(UsersContext);
   const { esiBlueprints } = useContext(PersonalESIDataContext);
   const { corpEsiBlueprints } = useContext(CorpEsiDataContext);
+
+  function onChange(value) {
+    const tempArray = [
+      ...esiBlueprints.flatMap((entry) => entry.data),
+      ...Array.from(corpEsiBlueprints.values())
+        .filter((obj) => Object.keys(obj).length > 0)
+        .map(Object.values)
+        .reduce((acc, val) => acc.concat(val), []),
+    ].filter((i) => i.type_id === value.blueprintID);
+    const idArray = new Set(tempArray.map((bp) => bp.type_id));
+    updateBlueprintData({
+      ids: [...idArray],
+      blueprints: tempArray,
+    });
+    if (displayAll) {
+      changeDisplayAll((prev) => !prev);
+    }
+    if (displayActive) {
+      changeDisplayActive((prev) => !prev);
+    }
+    if (displayManufacturing) {
+      changeDisplayManufacturing((prev) => !prev);
+    }
+    if (displayReactions) {
+      changeDisplayReactions((prev) => !prev);
+    }
+    if (displayBPO) {
+      changeDisplayBPO((prev) => !prev);
+    }
+    if (displayBPC) {
+      changeDisplayBPC((prev) => !prev);
+    }
+  }
+
   return (
     <Paper
-      square={true}
+      square
       elevation={2}
       sx={{
         padding: "20px",
@@ -46,59 +80,7 @@ export function LibrarySearch({
     >
       <Grid container>
         <Grid item xs={12} sm={5} md={4} xl={2}>
-          <Autocomplete
-            disableClearable
-            fullWidth
-            id="Blueprint Search"
-            clearOnBlur
-            blurOnSelect
-            variant="standard"
-            size="small"
-            options={itemList}
-            getOptionLabel={(option) => option.name}
-            onChange={(event, value) => {
-              const tempArray = [
-                ...esiBlueprints.flatMap((entry) => entry.data),
-                ...Array.from(corpEsiBlueprints.values())
-                  .filter((obj) => Object.keys(obj).length > 0)
-                  .map(Object.values)
-                  .reduce((acc, val) => acc.concat(val), []),
-              ].filter((i) => i.type_id === value.blueprintID);
-              const idArray = new Set(tempArray.map((bp) => bp.type_id));
-              updateBlueprintData({
-                ids: [...idArray],
-                blueprints: tempArray,
-              });
-              if (displayAll) {
-                changeDisplayAll((prev) => !prev);
-              }
-              if (displayActive) {
-                changeDisplayActive((prev) => !prev);
-              }
-              if (displayManufacturing) {
-                changeDisplayManufacturing((prev) => !prev);
-              }
-              if (displayReactions) {
-                changeDisplayReactions((prev) => !prev);
-              }
-              if (displayBPO) {
-                changeDisplayBPO((prev) => !prev);
-              }
-              if (displayBPC) {
-                changeDisplayBPC((prev) => !prev);
-              }
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                size="small"
-                label="Search"
-                nargin="none"
-                variant="standard"
-                InputProps={{ ...params.InputProps, type: "search" }}
-              />
-            )}
-          />
+          <VirtualisedRecipeSearch onSelect={onChange} />
         </Grid>
         <Grid
           item

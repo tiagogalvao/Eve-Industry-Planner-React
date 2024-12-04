@@ -22,6 +22,7 @@ import { useDrag } from "react-dnd";
 import { ItemTypes } from "../../../../Context/DnDTypes";
 import { useOpenGroup } from "../../../../Hooks/GroupHooks/useOpenGroup";
 import GLOBAL_CONFIG from "../../../../global-config-app";
+import { useNavigate } from "react-router-dom";
 
 export function ClassicGroupJobCard({ group }) {
   const { multiSelectJobPlanner, updateMultiSelectJobPlanner } = useContext(
@@ -45,23 +46,33 @@ export function ClassicGroupJobCard({ group }) {
   let groupCardChecked = useMemo(() => {
     return multiSelectJobPlanner.some((i) => i == group.groupID);
   }, [multiSelectJobPlanner]);
+  const navigate = useNavigate();
 
   return (
     <Grid ref={drag} item xs={12} sm={6} md={4} lg={3}>
       <Paper
         elevation={3}
         square
-        sx={{
-          padding: "10px",
-          height: "100%",
-          width: "100%",
-          backgroundColor: (theme) =>
+        sx={(theme) => {
+          const isDarkMode = theme.palette.mode === PRIMARY_THEME;
+          const backgroundColor =
             groupCardChecked || isDragging
-              ? theme.palette.mode !== "dark"
-                ? grey[300]
-                : grey[900]
-              : "none",
-          cursor: "grab",
+              ? isDarkMode
+                ? grey[900]
+                : grey[300]
+              : undefined;
+          const borderColor = isDarkMode ? grey[700] : grey[400];
+          return {
+            marginTop: "5px",
+            marginBottom: "5px",
+            cursor: "grab",
+            backgroundColor,
+            transition: "border 0.3s ease",
+            border: `2px solid transparent`,
+            "&:hover": {
+              border: `2px solid ${borderColor}`,
+            },
+          };
         }}
       >
         <Box sx={{ display: "flex", height: "100%" }}>
@@ -104,6 +115,9 @@ export function ClassicGroupJobCard({ group }) {
                         theme.palette.mode === PRIMARY_THEME
                           ? theme.palette.primary.main
                           : theme.palette.secondary.main,
+                      "&:Hover": {
+                        color: "error.main",
+                      },
                     }}
                     onClick={() => {
                       deleteGroupWithoutJobs(group.groupID);
@@ -118,11 +132,7 @@ export function ClassicGroupJobCard({ group }) {
                 xs={12}
                 sx={{ marginBottom: { xs: "5px", sm: "10px" } }}
               >
-                <Typography
-                  color="secondary"
-                  align="center"
-                  variant="body1"
-                >
+                <Typography color="secondary" align="center" variant="body1">
                   {group.groupName}
                 </Typography>
               </Grid>
@@ -134,11 +144,14 @@ export function ClassicGroupJobCard({ group }) {
                   sx={{ display: "flex", justifyContent: "center" }}
                 >
                   <AvatarGroup max={4} style={{ height: "100%" }}>
-                    {group.includedTypeIDs.map((typeID) => {
+                    {[...group.includedTypeIDs].map((typeID) => {
                       return (
                         <Avatar
                           key={typeID}
                           src={`https://images.evetech.net/types/${typeID}/icon?size=64`}
+                          style={{
+                            border: "none",
+                          }}
                         />
                       );
                     })}
@@ -150,10 +163,7 @@ export function ClassicGroupJobCard({ group }) {
                   <Button
                     variant="outlined"
                     color="primary"
-                    onClick={() => {
-                      openGroup(group.groupID);
-                      updateEditGroupTrigger((prev) => !prev);
-                    }}
+                    onClick={() => navigate(`/group/${group.groupID}`)}
                     sx={{ height: "25px", width: "100px" }}
                   >
                     View

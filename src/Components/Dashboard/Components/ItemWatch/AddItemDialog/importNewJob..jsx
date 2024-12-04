@@ -1,15 +1,17 @@
 import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
 import itemList from "../../../../../RawData/searchIndex.json";
 import { useJobBuild } from "../../../../../Hooks/useJobBuild";
-import { useJobManagement } from "../../../../../Hooks/useJobManagement";
-import { useFirebase } from "../../../../../Hooks/useFirebase";
-import { jobTypes } from "../../../../../Context/defaultValues";
 import { useContext, useEffect } from "react";
-import { EvePricesContext } from "../../../../../Context/EveDataContext";
+import {
+  EvePricesContext,
+  SystemIndexContext,
+} from "../../../../../Context/EveDataContext";
 import { UserWatchlistContext } from "../../../../../Context/AuthContext";
+import getMissingESIData from "../../../../../Functions/Shared/getMissingESIData";
+import checkJobTypeIsBuildable from "../../../../../Functions/Helper/checkJobTypeIsBuildable";
+import { useInstallCostsCalc } from "../../../../../Hooks/GeneralHooks/useInstallCostCalc";
 
 export function ImportNewJob_WatchlistDialog({
-  parentUser,
   setFailedImport,
   changeLoadingText,
   setMaterialJobs,
@@ -20,10 +22,11 @@ export function ImportNewJob_WatchlistDialog({
   updateGroupSelect,
 }) {
   const { userWatchlist } = useContext(UserWatchlistContext);
-  const { updateEvePrices } = useContext(EvePricesContext);
+  const { evePrices, updateEvePrices } = useContext(EvePricesContext);
+  const { systemIndexData, updateSystemIndexData } =
+    useContext(SystemIndexContext);
   const { buildJob } = useJobBuild();
-  const { generatePriceRequestFromJob } = useJobManagement();
-  const { getItemPrices } = useFirebase();
+  const { calculateInstallCostFromJob } = useInstallCostsCalc();
 
   useEffect(() => {
     async function findJobToEdit() {
@@ -52,14 +55,10 @@ export function ImportNewJob_WatchlistDialog({
       return;
     }
 
-    let itemPricesSet = new Set(generatePriceRequestFromJob(WatchlistItemJob));
     materialMap[WatchlistItemJob.itemID] = WatchlistItemJob;
     const materialJobRequests = WatchlistItemJob.build.materials.reduce(
       (prev, material) => {
-        if (
-          material.jobType === jobTypes.manufacturing ||
-          material.jobType === jobTypes.reaction
-        ) {
+        if (checkJobTypeIsBuildable(material.jobType)) {
           prev.push({ itemID: material.typeID });
         }
         return prev;
@@ -70,17 +69,26 @@ export function ImportNewJob_WatchlistDialog({
     const MaterialJobs = await buildJob(materialJobRequests);
 
     for (let job of MaterialJobs) {
-      itemPricesSet = new Set([
-        ...itemPricesSet,
-        ...generatePriceRequestFromJob(job),
-      ]);
       materialMap[job.itemID] = job;
     }
 
-    const itemPriceResult = await getItemPrices([...itemPricesSet], parentUser);
+    const { requestedMarketData, requestedSystemIndexes } =
+      await getMissingESIData([...MaterialJobs, WatchlistItemJob]);
+
+    recalculateInstallCostsWithNewData(
+      MaterialJobs,
+      calculateInstallCostFromJob,
+      requestedMarketData,
+      requestedSystemIndexes
+    );
+
     updateEvePrices((prev) => ({
       ...prev,
-      ...itemPriceResult,
+      ...requestedMarketData,
+    }));
+    updateSystemIndexData((prev) => ({
+      ...prev,
+      ...requestedSystemIndexes,
     }));
     updateWatchlistItemRequest(WatchlistItemJob.itemID);
     setMaterialJobs(materialMap);

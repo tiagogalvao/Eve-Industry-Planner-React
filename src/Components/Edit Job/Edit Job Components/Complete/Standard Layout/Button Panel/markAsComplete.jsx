@@ -9,19 +9,18 @@ export function MarkAsCompleteButton({ activeJob, setJobModified }) {
   const { groupArray, updateGroupArray } = useContext(JobArrayContext);
   const { activeGroup } = useContext(ActiveJobContext);
 
-  const toggleMarkJobAsComplete = () => {
-    const newGroupArray = [...groupArray];
-    let selectedJob = newGroupArray.find((i) => i.groupID === activeGroup);
-
-    const newAreComplete = new Set(selectedJob.areComplete);
-    newAreComplete[newAreComplete.has(activeJob.jobID) ? "delete" : "add"](
-      activeJob.jobID
-    );
-    selectedJob.areComplete = [...newAreComplete];
-    updateGroupArray(newGroupArray);
-    setJobModified(true);
-  };
   const activeGroupObject = groupArray.find((i) => i.groupID === activeGroup);
+
+  function toggleMarkJobAsComplete() {
+    const selectedMethod = activeGroupObject.areComplete.has(activeJob.jobID)
+      ? activeGroupObject.removeAreComplete
+      : activeGroupObject.addAreComplete;
+
+    selectedMethod(activeJob.jobID);
+
+    updateGroupArray((prev) => [...prev]);
+    setJobModified(true);
+  }
 
   if (!activeGroup) {
     return null;
@@ -35,7 +34,7 @@ export function MarkAsCompleteButton({ activeJob, setJobModified }) {
       onClick={toggleMarkJobAsComplete}
       sx={{ margin: "10px" }}
     >
-      {activeGroupObject.areComplete.includes(activeJob.jobID)
+      {activeGroupObject.areComplete.has(activeJob.jobID)
         ? "Mark As Incomplete"
         : "Mark As Complete"}
     </Button>

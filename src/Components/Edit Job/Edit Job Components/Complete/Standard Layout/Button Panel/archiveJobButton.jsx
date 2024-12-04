@@ -10,10 +10,12 @@ import {
   UsersContext,
 } from "../../../../../../Context/AuthContext";
 import { useFirebase } from "../../../../../../Hooks/useFirebase";
-import { useJobSnapshotManagement } from "../../../../../../Hooks/JobHooks/useJobSnapshots";
 import { getAnalytics, logEvent } from "firebase/analytics";
 import { useNavigate } from "react-router-dom";
 import { useHelperFunction } from "../../../../../../Hooks/GeneralHooks/useHelperFunctions";
+import deleteJobFromFirebase from "../../../../../../Functions/Firebase/deleteJob";
+import uploadJobSnapshotsToFirebase from "../../../../../../Functions/Firebase/uploadJobSnapshots";
+import archiveJobInFirebase from "../../../../../../Functions/Firebase/archiveJob";
 
 export function ArchiveJobButton({ activeJob }) {
   const { activeGroup } = useContext(ActiveJobContext);
@@ -23,9 +25,8 @@ export function ArchiveJobButton({ activeJob }) {
     UserJobSnapshotContext
   );
   const { isLoggedIn } = useContext(IsLoggedInContext);
-  const { archiveJob, removeJob, uploadUserJobSnapshot, updateMainUserDoc } =
+  const { updateMainUserDoc } =
     useFirebase();
-  const { deleteJobSnapshot } = useJobSnapshotManagement();
   const { findParentUserIndex, sendSnackbarNotificationSuccess } =
     useHelperFunction();
   const analytics = getAnalytics();
@@ -57,10 +58,13 @@ export function ArchiveJobButton({ activeJob }) {
     updateUsers(newUserArray);
     sendSnackbarNotificationSuccess(`${activeJob.name} Archived`);
 
-    let newUserJobSnapshot = deleteJobSnapshot(activeJob, [...userJobSnapshot]);
-    await uploadUserJobSnapshot(newUserJobSnapshot);
-    await archiveJob(activeJob);
-    await removeJob(activeJob);
+    const newUserJobSnapshot = userJobSnapshot.filter(
+      (i) => i.jobID !== activeJob.jobID
+    );
+
+    await uploadJobSnapshotsToFirebase(newUserJobSnapshot);
+    await archiveJobInFirebase(activeJob);
+    await deleteJobFromFirebase(activeJob);
     updateUserJobSnapshot(newUserJobSnapshot);
     updateMainUserDoc();
     navigate("/jobplanner");

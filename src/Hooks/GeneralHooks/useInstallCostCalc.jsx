@@ -94,7 +94,7 @@ export function useInstallCostsCalc() {
         );
       } else {
         return alternativeSystemIndexData[requiredSystemID]?.[
-          jobTypeMapping[jobType]
+          jobTypeMapping[jobType] || 0
         ];
       }
     }

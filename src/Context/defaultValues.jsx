@@ -428,7 +428,6 @@ export let usersDefault = [
     CharacterHash: "ABC123",
     CharacterName: "Example Character",
     ParentUser: true,
-    apiJobs: [],
     linkedJobs: new Set([477723892, 4777240090]),
     linkedOrders: new Set([6161413749, 6161414065]),
     linkedTrans: new Set([
@@ -639,6 +638,7 @@ export const ZERO_TWO_DECIMAL_PLACES = {
   maximumFractionDigits: 2,
 };
 
+export const SMALL_TEXT_FORMAT = { xs: "caption" };
 export const STANDARD_TEXT_FORMAT = { xs: "caption", sm: "body2" };
 export const LARGE_TEXT_FORMAT = { xs: "caption", sm: "body1" };
 
@@ -649,5 +649,5 @@ export const REMOTE_CONFIG_DEFAULT_VALUES = {
   app_version_number: __APP_VERSION__,
   maintenance_mode: false,
   enable_upcoming_changes_page: false,
-  useSettingsV2: false,
+  useSettingsV2: true,
 };

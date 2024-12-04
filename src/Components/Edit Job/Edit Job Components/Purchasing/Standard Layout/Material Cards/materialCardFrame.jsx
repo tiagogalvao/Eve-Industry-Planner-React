@@ -17,6 +17,7 @@ import {
   STANDARD_TEXT_FORMAT,
   ZERO_DECIMAL_PLACES,
 } from "../../../../../../Context/defaultValues";
+import getCurrentLinkedChildJobIDsForMaterial from "./functions/getCurrentLinkedChildJobIDsForMaterial.js";
 
 export function MaterialCardFrame_Purchasing({
   activeJob,
@@ -40,15 +41,12 @@ export function MaterialCardFrame_Purchasing({
     let childJobs = [];
     let childJobProductionTotal = 0;
     let remainingTotalToBeImported = 0;
-    const childJobLocation = [
-      ...activeJob.build.childJobs[material.typeID],
-      ...(temporaryChildJobs[material.typeID]
-        ? [temporaryChildJobs[material.typeID].jobID]
-        : []),
-      ...(parentChildToEdit.childJobs[material.typeID]?.add
-        ? parentChildToEdit.childJobs[material.typeID].add
-        : []),
-    ];
+    const childJobLocation = getCurrentLinkedChildJobIDsForMaterial(
+      material.typeID,
+      activeJob,
+      temporaryChildJobs,
+      parentChildToEdit
+    );
 
     if (childJobLocation.length > 0) {
       function filterJobs(jobList) {

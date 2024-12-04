@@ -11,6 +11,7 @@ export function ExistingChildJobs_Purchasing({
   parentChildToEdit,
   updateParentChildToEdit,
 }) {
+
   if (existingChildJobs.length === 0) {
     return (
       <Grid item xs={12}>
@@ -47,9 +48,7 @@ function ChildJobEntry({
   material,
 }) {
   const { jobArray } = useContext(JobArrayContext);
-  const { Add_RemovePendingChildJobs, sendSnackbarNotificationSuccess } =
-    useHelperFunction();
-
+  const { sendSnackbarNotificationSuccess } = useHelperFunction();
   const job = jobArray.find((i) => i.jobID == childJobID);
   if (!job) return null;
   const setupCount = Object.values(job.build.setup).reduce((prev, setup) => {
@@ -90,20 +89,21 @@ function ChildJobEntry({
           size="small"
           color="error"
           onClick={() => {
-            const { newChildJobstoAdd, newChildJobsToRemove } =
-              Add_RemovePendingChildJobs(
-                parentChildToEdit.childJobs[material.typeID],
-                job.jobID,
-                false
-              );
-
             updateParentChildToEdit((prev) => ({
               ...prev,
               childJobs: {
+                ...prev.childJobs,
                 [material.typeID]: {
                   ...prev.childJobs[material.typeID],
-                  add: [...newChildJobstoAdd],
-                  remove: [...newChildJobsToRemove],
+                  add: (prev.childJobs[material.typeID]?.add || []).filter(
+                    (jobID) => jobID !== job.jobID
+                  ),
+                  remove: [
+                    ...new Set([
+                      ...(prev.childJobs[material.typeID]?.remove || []),
+                      job.jobID,
+                    ]),
+                  ],
                 },
               },
             }));

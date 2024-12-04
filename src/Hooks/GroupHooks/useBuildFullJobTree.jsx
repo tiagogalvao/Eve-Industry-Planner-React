@@ -4,19 +4,19 @@ import { jobTypes } from "../../Context/defaultValues";
 import { useJobBuild } from "../useJobBuild";
 import { useRecalcuateJob } from "../GeneralHooks/useRecalculateJob";
 import { IsLoggedInContext } from "../../Context/AuthContext";
-import { useFirebase } from "../useFirebase";
-import { useManageGroupJobs } from "./useManageGroupJobs";
 import { useHelperFunction } from "../GeneralHooks/useHelperFunctions";
+import { ApplicationSettingsContext } from "../../Context/LayoutContext";
+import addNewJobToFirebase from "../../Functions/Firebase/addNewJob";
+import checkJobTypeIsBuildable from "../../Functions/Helper/checkJobTypeIsBuildable";
 
 export function useBuildFullJobTree() {
   const { jobArray, groupArray, updateJobArray, updateGroupArray } =
     useContext(JobArrayContext);
   const { activeGroup } = useContext(ActiveJobContext);
   const { isLoggedIn } = useContext(IsLoggedInContext);
+  const { applicationSettings } = useContext(ApplicationSettingsContext);
   const { buildJob } = useJobBuild();
   const { recalculateJobForNewTotal } = useRecalcuateJob();
-  const { addNewJob } = useFirebase();
-  const { addMultipleJobsToGroup } = useManageGroupJobs();
   const { sendSnackbarNotificationSuccess } = useHelperFunction();
 
   async function buildFullJobTree(inputJobIDs) {
@@ -37,10 +37,15 @@ export function useBuildFullJobTree() {
     );
     if (isLoggedIn) {
       for (const job of newJobs) {
-        addNewJob(job);
+        await addNewJobToFirebase(job);
       }
     }
-    newGroupArray = addMultipleJobsToGroup(newJobs, newGroupArray, newJobArray);
+
+    const matchedGroup = newGroupArray.find(
+      (i) => i.groupID === activeGroup
+    );
+    matchedGroup.addJobsToGroup(newJobs);
+
     newJobArray = [...newJobArray, ...newJobs];
 
     updateGroupArray(newGroupArray);
@@ -83,9 +88,11 @@ export function useBuildFullJobTree() {
       if (!job) continue;
 
       const childJobData = job.build.materials.reduce((output, material) => {
+        if (applicationSettings.checkTypeIDisExempt(material.typeID)) {
+          return output;
+        }
         if (
-          material.jobType === jobTypes.manufacturing ||
-          material.jobType === jobTypes.reaction
+          checkJobTypeIsBuildable(material.jobType)
         ) {
           output.push({
             itemID: material.typeID,
@@ -117,9 +124,11 @@ export function useBuildFullJobTree() {
     for (const requestedJob of jobHolding) {
       requestedJob.build.materials.forEach((material) => {
         if (
-          material.jobType !== jobTypes.manufacturing &&
-          material.jobType !== jobTypes.reaction
+          !checkJobTypeIsBuildable(material.jobType)
         ) {
+          return;
+        }
+        if (applicationSettings.checkTypeIDisExempt(material.typeID)) {
           return;
         }
 

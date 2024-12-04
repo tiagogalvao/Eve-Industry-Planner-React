@@ -41,7 +41,7 @@ export function UserLogInUI({ colorMode }) {
         switch (userUIData.returnState) {
           case undefined:
             break;
-          case "/":
+          case "main":
             switch (isLoggedIn) {
               case true:
                 navigate("/dashboard");
